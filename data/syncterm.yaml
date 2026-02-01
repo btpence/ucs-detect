@@ -1,23 +1,20 @@
 ambiguous_width: -1
-datetime: 2026-02-01 19:09:29 UTC
-height: 120
+datetime: 2026-02-01 17:22:26 UTC
+height: 25
 python_version: 3.15.0a5
-seconds_elapsed: 0.008883767004590482
+seconds_elapsed: 0.06440998899779515
 session_arguments:
-  limit_category_time: 900.0
+  limit_category_time: 0
   limit_codepoints: 0
   limit_errors: 0
   limit_graphemes: 0
   limit_graphemes_pct: 0
   stream: stderr
-software_name: linux fbdev
-software_version: 6.14.0-37
+software_name: SyncTERM
+software_version: 1.7
 system: Linux
 terminal_results:
-  device_attributes:
-    extensions: []
-    service_class: 6
-  height: 120
+  height: 25
   iterm2_features:
     features: {}
     supported: false
@@ -26,21 +23,23 @@ terminal_results:
   kitty_notifications: false
   kitty_pointer_shapes: false
   modes: {}
-  number_of_colors: 8
-  pixels_height: 0
-  pixels_width: 0
+  number_of_colors: 16777216
+  pixels_height: 400
+  pixels_width: 640
+  screen_ratio: '16:10'
+  screen_ratio_name: WSXGA
   sixel: false
-  software_name: linux fbdev
-  software_version: 6.14.0-37
-  tab_stop_width: 8
+  software_name: SyncTERM
+  software_version: 1.7rc2
+  tab_stop_width: 5
   text_sizing:
     scale: false
     width: false
-  ttype: linux
-  width: 360
+  ttype: syncterm
+  width: 80
   xtgettcap:
     capabilities: {}
-    supported: false
+    supported: true
 test_results:
   emoji_vs15_results: {}
   emoji_vs16_results: {}
@@ -48,4 +47,4 @@ test_results:
   language_results: null
   unicode_wide_results: {}
 wcwidth_version: 0.5.3
-width: 360
+width: 80
