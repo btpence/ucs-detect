@@ -32,7 +32,7 @@ Solution
 python wcwidth_ library, for the latest Unicode versions across WIDE, ZERO, ZWJ, VS-16, and VS-15
 unicode sequences.
 
-ucs-browser_ allows to interactive browsing of each kind of category with an interactive terminal
+``ucs-browser`` allows to interactive browsing of each kind of category with an interactive terminal
 browsing program.
 
 How it works
