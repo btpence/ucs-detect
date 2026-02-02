@@ -28,7 +28,7 @@ Support also varies within a terminal.
 Solution
 --------
 
-ucs-detect_ measures terminal compliance with the Specification_ of the
+``ucs-detect`` measures terminal compliance with the Specification_ of the
 python wcwidth_ library, for the latest Unicode versions across WIDE, ZERO, ZWJ, VS-16, and VS-15
 unicode sequences.
 
@@ -99,7 +99,6 @@ ucs-browser
 
 .. figure:: https://dxtz6bzwq9sxx.cloudfront.net/ucs-browser.gif
    :alt: video demonstration of running ucs-detect
-
 
 ``ucs-browser`` is an interactive terminal browser for visually inspecting
 unicode character width rendering. It displays characters with pipe (``|``)
