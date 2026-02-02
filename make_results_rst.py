@@ -686,7 +686,7 @@ def display_tabulated_scores(score_table):
 
     # Introduction and disclaimer
     print("This is a volunteer-maintained analysis created by and for terminal emulator and ")
-    print("developers and TUI/CLI library developers. ")
+    print("TUI/CLI library developers. ")
     print()
     print("We welcome productive contributions and corrections to improve the accuracy and")
     print("completeness of these measurements.")
