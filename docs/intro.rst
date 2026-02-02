@@ -222,7 +222,7 @@ History
 
 - 2.0.0 (2026-02-01):  More correct results with up-to-date wcwidth_, loads of new CLI options like
   ``--rerun``, ``--limit-category-time`` and remove CLI arguments ``--unicode-version``,
-  ``--shell``, ``--quick``, and ``--no-emit-osc1337``. The wcwidth-browser_ program has been
+  ``--shell``, ``--quick``, and ``--no-emit-osc1337``. The ``wcwidth-browser`` program has been
   migrated from wcwidth_, and setup.py was migrated to pyproject.toml. Requires Python 3.8.
 
 - 1.0.8 (2025-11-02): Added detection of DEC Private Modes, testing
