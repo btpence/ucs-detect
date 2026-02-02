@@ -665,7 +665,7 @@ def _format_graphics_protocols(entry, sw_name):
     if 3 in da_ext:
         protocols.append("ReGIS")
     has_modern = False
-    iterm2 = tr.get("iterm2_features", {})
+    iterm2 = tr.get("iterm2_features") or {}
     if iterm2.get("supported", False):
         protocols.append("iTerm2")
         has_modern = True
@@ -971,7 +971,7 @@ def score_graphics(data):
     if 3 in da_ext:
         has_any = True
 
-    iterm2 = tr.get("iterm2_features", {})
+    iterm2 = tr.get("iterm2_features") or {}
     if iterm2.get("supported", False):
         return 1.0
     if tr.get("kitty_graphics", False):
@@ -1315,7 +1315,7 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
         gfx_protocols.append(("Sixel", False))
     da_ext = tr.get("device_attributes", {}).get("extensions", [])
     gfx_protocols.append(("ReGIS", 3 in da_ext))
-    iterm2 = tr.get("iterm2_features", {})
+    iterm2 = tr.get("iterm2_features") or {}
     gfx_protocols.append(("iTerm2", iterm2.get("supported", False)))
     gfx_protocols.append(("Kitty", tr.get("kitty_graphics", False)))
     supported = [name for name, v in gfx_protocols if v]
@@ -1460,7 +1460,7 @@ def show_graphics_results(sw_name, entry):
     da_ext = tr.get("device_attributes", {}).get("extensions", [])
     regis_supported = 3 in da_ext
     kitty_supported = tr.get("kitty_graphics", False)
-    iterm2_supported = tr.get("iterm2_features", {}).get("supported", False)
+    iterm2_supported = tr.get("iterm2_features") or {}.get("supported", False)
 
     protocols = []
     if sixel_supported:
