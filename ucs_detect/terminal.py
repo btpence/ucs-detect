@@ -344,23 +344,53 @@ def maybe_determine_kitty_graphics(term, timeout=1.0, cursor_report_delay_ms=0):
     return {'kitty_graphics': supported}
 
 
+def _probe_iterm2_cell_size(term, timeout=1.0, cursor_report_delay_ms=0):
+    """Probe for iTerm2 image support via OSC 1337;ReportCellSize.
+
+    Terminals that support the iTerm2 inline image protocol generally
+    respond to this query, even if they don't implement the Capabilities
+    query. A response indicates iTerm2 image protocol support.
+    """
+    echo(term, '\x1b]1337;ReportCellSize\x07')
+    if cursor_report_delay_ms:
+        time.sleep(cursor_report_delay_ms / 1000.0)
+    raw = term.flushinp(timeout=timeout)
+    if not raw:
+        return False
+    return bool(re.search(r'\x1b\]1337;ReportCellSize=', raw))
+
+
 def maybe_determine_iterm2_features(term, timeout=1.0, cursor_report_delay_ms=0):
-    """Query iTerm2 feature reporting protocol."""
+    """Query iTerm2 feature reporting protocol.
+
+    First attempts the official ``OSC 1337;Capabilities`` query. If that
+    fails, falls back to ``OSC 1337;ReportCellSize`` as a probe — terminals
+    that support the iTerm2 inline image protocol (such as WezTerm) respond
+    to this even without implementing the Capabilities query.
+    """
     result = {'iterm2_features': {'supported': False, 'features': {}}}
     echo(term, '\x1b]1337;Capabilities\x07')
     if cursor_report_delay_ms:
         time.sleep(cursor_report_delay_ms / 1000.0)
     raw = term.flushinp(timeout=timeout)
-    if not raw:
-        return result
 
-    match = re.search(r'\x1b\]1337;Capabilities=([^\x07\x1b]+)', raw)
-    if not match:
-        return result
+    if raw:
+        match = re.search(r'\x1b\]1337;Capabilities=([^\x07\x1b]+)', raw)
+        if match:
+            result['iterm2_features']['supported'] = True
+            _parse_iterm2_capabilities(result, match.group(1))
+            return result
 
-    result['iterm2_features']['supported'] = True
-    feature_str = match.group(1)
+    # fallback: probe ReportCellSize for iTerm2 image protocol support
+    if _probe_iterm2_cell_size(term, timeout, cursor_report_delay_ms):
+        result['iterm2_features']['supported'] = True
+        result['iterm2_features']['detection'] = 'ReportCellSize'
 
+    return result
+
+
+def _parse_iterm2_capabilities(result, feature_str):
+    """Parse iTerm2 Capabilities feature string into result dict."""
     FEATURE_MAP = {
         'T': ('24BIT', 'int', 2),
         'Cw': ('CLIPBOARD_WRITABLE', 'bool', 0),
@@ -403,8 +433,6 @@ def maybe_determine_iterm2_features(term, timeout=1.0, cursor_report_delay_ms=0)
                 break
         if not matched:
             pos += 1
-
-    return result
 
 
 def maybe_determine_text_sizing(term, timeout=1.0):

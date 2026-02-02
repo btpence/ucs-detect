@@ -220,6 +220,8 @@ marks across diverse scripts.
 History
 -------
 
+- 2.0.1 (2026-02-01): Update iTerm2 image feature detection.
+
 - 2.0.0 (2026-02-01):  More correct results with up-to-date wcwidth_, loads of new CLI options like
   ``--rerun``, ``--limit-category-time`` and remove CLI arguments ``--unicode-version``,
   ``--shell``, ``--quick``, and ``--no-emit-osc1337``. The ``wcwidth-browser`` program has been
