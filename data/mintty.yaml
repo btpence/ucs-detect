@@ -11,7 +11,7 @@ session_arguments:
   stream: stderr
 software_name: mintty
 software_version: 3.8.1
-system: MINGW64_NT-10.0-19045
+system: Windows
 terminal_results:
   background_color_hex: '#000000000000'
   background_color_rgb:
