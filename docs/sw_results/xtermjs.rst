@@ -1,42 +1,41 @@
-.. _putty:
+.. _xtermjs:
 
-PuTTY
------
+xterm.js
+--------
 
 
-Tested Software version 0.81 on Linux.
-The homepage URL of this terminal is https://www.chiark.greenend.org.uk/~sgtatham/putty/.
+Tested Software version 6.1.0-beta.91 on Linux.
 Full results available at ucs-detect_ repository path
-`data/putty.yaml <https://github.com/jquast/ucs-detect/blob/master/data/putty.yaml>`_.
+`data/vscodeterminal.yaml <https://github.com/jquast/ucs-detect/blob/master/data/vscodeterminal.yaml>`_.
 
-.. _puttyscores:
+.. _xtermjsscores:
 
 Score Breakdown
 +++++++++++++++
 
-Detailed breakdown of how scores are calculated for *PuTTY*:
+Detailed breakdown of how scores are calculated for *xterm.js*:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  ===================================  ===========  ====================
-     #  Score Type                           Raw Score    Final Scaled Score
-   ===  ===================================  ===========  ====================
-     1  :ref:`WIDE <puttywide>`              99.41%       35.4%
-     2  :ref:`ZWJ <puttyzwj>`                0.69%        0.7%
-     3  :ref:`LANG <puttylang>`              97.49%       91.6%
-     4  :ref:`VS16 <puttyvs16>`              50.00%       50.0%
-     5  :ref:`VS15 <puttyvs15>`              0.00%        0.0%
-     6  :ref:`Capabilities <puttydecmodes>`  0.00%        0.0%
-     7  :ref:`Graphics <puttygraphics>`      0%           0.0%
-     8  :ref:`TIME <puttytime>`              9.10s        93.1%
-   ===  ===================================  ===========  ====================
+   ===  =====================================  ===========  ====================
+     #  Score Type                             Raw Score    Final Scaled Score
+   ===  =====================================  ===========  ====================
+     1  :ref:`WIDE <xtermjswide>`              99.17%       9.1%
+     2  :ref:`ZWJ <xtermjszwj>`                0.69%        0.7%
+     3  :ref:`LANG <xtermjslang>`              97.51%       91.6%
+     4  :ref:`VS16 <xtermjsvs16>`              50.00%       50.0%
+     5  :ref:`VS15 <xtermjsvs15>`              0.00%        0.0%
+     6  :ref:`Capabilities <xtermjsdecmodes>`  57.14%       57.1%
+     7  :ref:`Graphics <xtermjsgraphics>`      0%           0.0%
+     8  :ref:`TIME <xtermjstime>`              247.10s      43.3%
+   ===  =====================================  ===========  ====================
 
 **Score Comparison Plot:**
 
 The following plot shows how this terminal's scores compare to all other terminals tested.
 
-.. figure:: ../_static/plots/putty_scores_scaled.png
+.. figure:: ../_static/plots/xtermjs_scores_scaled.png
    :align: center
    :width: 800px
 
@@ -44,7 +43,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 39.22%
+- Raw Final Score: 43.49%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +53,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 6.5%
+- Final Scaled Score: 13.4%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -62,10 +61,10 @@ The following plot shows how this terminal's scores compare to all other termina
 
 Wide character support calculation:
 
-- Total successful codepoints: 5417
-- Total codepoints tested: 5449
-- Formula: 5417 / 5449
-- Result: 99.41%
+- Total successful codepoints: 7206
+- Total codepoints tested: 7266
+- Formula: 7206 / 7266
+- Result: 99.17%
 
 **ZWJ Score Details:**
 
@@ -96,17 +95,17 @@ Variation Selector-15 support calculation:
 
 **Capabilities Score Details:**
 
-Notable terminal capabilities (0 / 7):
+Notable terminal capabilities (4 / 7):
 
-- Bracketed Paste (2004): **no**
-- Synced Output (2026): **no**
-- Focus Events (1004): **no**
-- Mouse SGR (1006): **no**
+- Bracketed Paste (2004): **yes**
+- Synced Output (2026): **yes**
+- Focus Events (1004): **yes**
+- Mouse SGR (1006): **yes**
 - Graphemes (2027): **no**
 - Kitty Keyboard: **no**
 - XTGETTCAP: **no**
 
-Raw score: 0.00%
+Raw score: 57.14%
 
 **Graphics Score Details:**
 
@@ -123,10 +122,10 @@ Scoring: 100% for modern (iTerm2/Kitty), 50% for legacy only (Sixel/ReGIS), 0% f
 
 Test execution time:
 
-- Elapsed time: 9.10 seconds
+- Elapsed time: 247.10 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 93.1%
+- Scaled result: 43.3%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -134,44 +133,44 @@ Geometric mean calculation:
 
 - Formula: (p₁ × p₂ × ... × pₙ)^(1/n) where n = 94 languages
 - About `geometric mean <https://en.wikipedia.org/wiki/Geometric_mean>`_
-- Result: 97.49%
+- Result: 97.51%
 
-.. _puttywide:
+.. _xtermjswide:
 
 Wide character support
 ++++++++++++++++++++++
 
-Wide character support of *PuTTY* is **99.4%** (32 errors of 5449 codepoints tested).
+Wide character support of *xterm.js* is **99.2%** (60 errors of 7266 codepoints tested).
 
 Sequence of a WIDE character, from midpoint of alignment failure records:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  =================================================  =============  ==========  =========  ========================
+   ===  =================================================  =============  ==========  =========  ===========================
      #  Codepoint                                          Python         Category      wcwidth  Name
-   ===  =================================================  =============  ==========  =========  ========================
-     1  `U+0001D330 <https://codepoints.net/U+0001D330>`_  '\\U0001d330'  So                  2  TETRAGRAM FOR ENCOUNTERS
-   ===  =================================================  =============  ==========  =========  ========================
+   ===  =================================================  =============  ==========  =========  ===========================
+     1  `U+0001D361 <https://codepoints.net/U+0001D361>`_  '\\U0001d361'  No                  2  COUNTING ROD UNIT DIGIT TWO
+   ===  =================================================  =============  ==========  =========  ===========================
 
 Total codepoints: 1
 
 
 - Shell test using `printf(1)`_, ``'|'`` should align in output::
 
-        $ printf "\xf0\x9d\x8c\xb0|\\n12|\\n"
-        𝌰|
+        $ printf "\xf0\x9d\x8d\xa1|\\n12|\\n"
+        𝍡|
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 1.
+  while *xterm.js* measures width 1.
 
-.. _puttyzwj:
+.. _xtermjszwj:
 
 Emoji ZWJ support
 +++++++++++++++++
 
-Compatibility of *PuTTY* with the Unicode Emoji ZWJ sequence table is **0.7%** (1435 errors of 1445 sequences tested).
+Compatibility of *xterm.js* with the Unicode Emoji ZWJ sequence table is **0.7%** (1435 errors of 1445 sequences tested).
 
 Sequence of an Emoji ZWJ Sequence, from midpoint of alignment failure records:
 
@@ -201,14 +200,14 @@ Total codepoints: 8
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 6.
+  while *xterm.js* measures width 6.
 
-.. _puttyvs16:
+.. _xtermjsvs16:
 
 Variation Selector-16 support
 +++++++++++++++++++++++++++++
 
-Emoji VS-16 results for *PuTTY* is 213 errors
+Emoji VS-16 results for *xterm.js* is 213 errors
 out of 426 total codepoints tested, 50.0% success.
 Sequence of a NARROW Emoji made WIDE by *Variation Selector-16*, from midpoint of alignment failure records:
 
@@ -232,15 +231,15 @@ Total codepoints: 2
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 1.
+  while *xterm.js* measures width 1.
 
 
-.. _puttyvs15:
+.. _xtermjsvs15:
 
 Variation Selector-15 support
 +++++++++++++++++++++++++++++
 
-Emoji VS-15 results for *PuTTY* is 158 errors
+Emoji VS-15 results for *xterm.js* is 158 errors
 out of 158 total codepoints tested, 0.0% success.
 Sequence of a WIDE Emoji made NARROW by *Variation Selector-15*, from midpoint of alignment failure records:
 
@@ -264,15 +263,15 @@ Total codepoints: 2
         1|
 
 - python `wcwidth.wcswidth()`_ measures width 1,
-  while *PuTTY* measures width 2.
+  while *xterm.js* measures width 2.
 
 
-.. _puttygraphics:
+.. _xtermjsgraphics:
 
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*PuTTY* does not report support for any graphics protocols.
+*xterm.js* does not report support for any graphics protocols.
 
 **Detection Methods:**
 
@@ -286,7 +285,7 @@ Graphics Protocol Support
 
 **Device Attributes Response:**
 
-- Extensions reported: none
+- Extensions reported: 2
 - Sixel_ indicator (``4``): not present
 - ReGIS_ indicator (``3``): not present
 
@@ -295,47 +294,45 @@ Graphics Protocol Support
 .. _`iTerm2 inline images`: https://iterm2.com/documentation-images.html
 .. _`Kitty graphics protocol`: https://sw.kovidgoyal.net/kitty/graphics-protocol/
 
-.. _puttylang:
+.. _xtermjslang:
 
 Language Support
 ++++++++++++++++
 
-The following 73 languages were tested with 100% success:
+The following 75 languages were tested with 100% success:
 
-Aja, Amarakaeri, Arabic, Standard, Assyrian Neo-Aramaic, Baatonum, Bamun, Belanda Viri, Bora, Catalan (2), Chakma, Chickasaw, Chinantec, Chiltepec, Dagaare, Southern, Dangme, Dari, Dendi, Dinka, Northeastern, Ditammari, Dzongkha, Evenki, Farsi, Western, Fon, French (Welche), Fur, Ga, Gen, Gilyak, Gumuz, Kabyle, Lamnso', Lao, Lingala (tones), Maldivian, Maori (2), Mazahua Central, Mirandese, Mixtec, Metlatónoc, Mòoré, Nanai, Navajo, Orok, Otomi, Mezquital, Panjabi, Eastern, Panjabi, Western, Pashto, Northern, Picard, Pular (Adlam), Saint Lucian Creole French, Secoya, Seraiki, Shan, Shipibo-Conibo, Sinhala, Siona, South Azerbaijani, Tagalog (Tagalog), Tai Dam, Tamazight, Central Atlas, Tamil, Tamil (Sri Lanka), Tem, Thai, Thai (2), Tibetan, Central, Ticuna, Uduk, Veps, Vietnamese, Waama, Yaneshaʼ, Yiddish, Eastern, Yoruba, Éwé.
+Aja, Amarakaeri, Arabic, Standard, Assyrian Neo-Aramaic, Baatonum, Bamun, Belanda Viri, Bora, Catalan (2), Chakma, Chickasaw, Chinantec, Chiltepec, Dagaare, Southern, Dangme, Dari, Dendi, Dinka, Northeastern, Ditammari, Dzongkha, Evenki, Farsi, Western, Fon, French (Welche), Fur, Ga, Gen, Gilyak, Gumuz, Kabyle, Lamnso', Lao, Lingala (tones), Maldivian, Maori (2), Mazahua Central, Mirandese, Mixtec, Metlatónoc, Mòoré, Nanai, Navajo, Orok, Otomi, Mezquital, Panjabi, Eastern, Panjabi, Western, Pashto, Northern, Picard, Pular (Adlam), Saint Lucian Creole French, Secoya, Seraiki, Shan, Shipibo-Conibo, Sinhala, Siona, South Azerbaijani, Tagalog (Tagalog), Tai Dam, Tamazight, Central Atlas, Tamil, Tamil (Sri Lanka), Tem, Thai, Thai (2), Tibetan, Central, Ticuna, Uduk, Urdu, Urdu (2), Veps, Vietnamese, Waama, Yaneshaʼ, Yiddish, Eastern, Yoruba, Éwé.
 
-The following 21 languages are not fully supported:
+The following 19 languages are not fully supported:
 
 .. table::
    :class: sphinx-datatable
 
-   ======================================================  ==========  =========  =============
-   lang                                                      n_errors    n_total  pct_success
-   ======================================================  ==========  =========  =============
-   :ref:`Sanskrit <puttylangsanskrit>`                            145        493  70.6%
-   :ref:`Malayalam <puttylangmalayalam>`                          246        845  70.9%
-   :ref:`Bengali <puttylangbengali>`                               96        385  75.1%
-   :ref:`Marathi <puttylangmarathi>`                               86        391  78.0%
-   :ref:`Hindi <puttylanghindi>`                                   82        390  79.0%
-   :ref:`Maithili <puttylangmaithili>`                             71        357  80.1%
-   :ref:`Nepali <puttylangnepali>`                                 69        352  80.4%
-   :ref:`Tamang, Eastern <puttylangtamangeastern>`                 11         70  84.3%
-   :ref:`Gujarati <puttylanggujarati>`                             50        343  85.4%
-   :ref:`Magahi <puttylangmagahi>`                                 43        314  86.3%
-   :ref:`Sanskrit (Grantha) <puttylangsanskritgrantha>`            39        293  86.7%
-   :ref:`Bhojpuri <puttylangbhojpuri>`                             41        313  86.9%
-   :ref:`Telugu <puttylangtelugu>`                                 42        384  89.1%
-   :ref:`Javanese (Javanese) <puttylangjavanesejavanese>`          43        530  91.9%
-   :ref:`Kannada <puttylangkannada>`                               14        287  95.1%
-   :ref:`Burmese <puttylangburmese>`                               10        268  96.3%
-   :ref:`Khmer, Central <puttylangkhmercentral>`                    8        443  98.2%
-   :ref:`Urdu (2) <puttylangurdu2>`                                 1         82  98.8%
-   :ref:`Urdu <puttylangurdu>`                                      1        110  99.1%
-   :ref:`Mon <puttylangmon>`                                        3        332  99.1%
-   :ref:`Khün <puttylangkhn>`                                       1        396  99.7%
-   ======================================================  ==========  =========  =============
+   ========================================================  ==========  =========  =============
+   lang                                                        n_errors    n_total  pct_success
+   ========================================================  ==========  =========  =============
+   :ref:`Sanskrit <xtermjslangsanskrit>`                            145        493  70.6%
+   :ref:`Malayalam <xtermjslangmalayalam>`                          246        845  70.9%
+   :ref:`Bengali <xtermjslangbengali>`                               96        385  75.1%
+   :ref:`Marathi <xtermjslangmarathi>`                               86        391  78.0%
+   :ref:`Hindi <xtermjslanghindi>`                                   82        390  79.0%
+   :ref:`Maithili <xtermjslangmaithili>`                             71        357  80.1%
+   :ref:`Nepali <xtermjslangnepali>`                                 69        352  80.4%
+   :ref:`Tamang, Eastern <xtermjslangtamangeastern>`                 11         70  84.3%
+   :ref:`Gujarati <xtermjslanggujarati>`                             50        343  85.4%
+   :ref:`Magahi <xtermjslangmagahi>`                                 43        314  86.3%
+   :ref:`Sanskrit (Grantha) <xtermjslangsanskritgrantha>`            39        293  86.7%
+   :ref:`Bhojpuri <xtermjslangbhojpuri>`                             41        313  86.9%
+   :ref:`Telugu <xtermjslangtelugu>`                                 42        384  89.1%
+   :ref:`Javanese (Javanese) <xtermjslangjavanesejavanese>`          43        530  91.9%
+   :ref:`Kannada <xtermjslangkannada>`                               14        287  95.1%
+   :ref:`Burmese <xtermjslangburmese>`                               10        268  96.3%
+   :ref:`Khmer, Central <xtermjslangkhmercentral>`                    8        443  98.2%
+   :ref:`Mon <xtermjslangmon>`                                        3        332  99.1%
+   :ref:`Khün <xtermjslangkhn>`                                       1        396  99.7%
+   ========================================================  ==========  =========  =============
 
-.. _puttylangsanskrit:
+.. _xtermjslangsanskrit:
 
 Sanskrit
 ^^^^^^^^
@@ -364,7 +361,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangmalayalam:
+.. _xtermjslangmalayalam:
 
 Malayalam
 ^^^^^^^^^
@@ -393,9 +390,9 @@ Total codepoints: 4
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *xterm.js* measures width 3.
 
-.. _puttylangbengali:
+.. _xtermjslangbengali:
 
 Bengali
 ^^^^^^^
@@ -423,9 +420,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *xterm.js* measures width 3.
 
-.. _puttylangmarathi:
+.. _xtermjslangmarathi:
 
 Marathi
 ^^^^^^^
@@ -454,7 +451,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylanghindi:
+.. _xtermjslanghindi:
 
 Hindi
 ^^^^^
@@ -483,7 +480,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangmaithili:
+.. _xtermjslangmaithili:
 
 Maithili
 ^^^^^^^^
@@ -512,7 +509,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangnepali:
+.. _xtermjslangnepali:
 
 Nepali
 ^^^^^^
@@ -541,7 +538,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangtamangeastern:
+.. _xtermjslangtamangeastern:
 
 Tamang, Eastern
 ^^^^^^^^^^^^^^^
@@ -570,7 +567,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylanggujarati:
+.. _xtermjslanggujarati:
 
 Gujarati
 ^^^^^^^^
@@ -599,9 +596,9 @@ Total codepoints: 4
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *xterm.js* measures width 3.
 
-.. _puttylangmagahi:
+.. _xtermjslangmagahi:
 
 Magahi
 ^^^^^^
@@ -630,7 +627,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangsanskritgrantha:
+.. _xtermjslangsanskritgrantha:
 
 Sanskrit (Grantha)
 ^^^^^^^^^^^^^^^^^^
@@ -658,9 +655,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *xterm.js* measures width 3.
 
-.. _puttylangbhojpuri:
+.. _xtermjslangbhojpuri:
 
 Bhojpuri
 ^^^^^^^^
@@ -692,9 +689,9 @@ Total codepoints: 7
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 4.
+  while *xterm.js* measures width 4.
 
-.. _puttylangtelugu:
+.. _xtermjslangtelugu:
 
 Telugu
 ^^^^^^
@@ -722,9 +719,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *xterm.js* measures width 3.
 
-.. _puttylangjavanesejavanese:
+.. _xtermjslangjavanesejavanese:
 
 Javanese (Javanese)
 ^^^^^^^^^^^^^^^^^^^
@@ -754,9 +751,9 @@ Total codepoints: 5
         1234|
 
 - python `wcwidth.wcswidth()`_ measures width 4,
-  while *PuTTY* measures width 5.
+  while *xterm.js* measures width 5.
 
-.. _puttylangkannada:
+.. _xtermjslangkannada:
 
 Kannada
 ^^^^^^^
@@ -784,9 +781,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *xterm.js* measures width 3.
 
-.. _puttylangburmese:
+.. _xtermjslangburmese:
 
 Burmese
 ^^^^^^^
@@ -814,9 +811,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *xterm.js* measures width 3.
 
-.. _puttylangkhmercentral:
+.. _xtermjslangkhmercentral:
 
 Khmer, Central
 ^^^^^^^^^^^^^^
@@ -846,65 +843,9 @@ Total codepoints: 5
         123|
 
 - python `wcwidth.wcswidth()`_ measures width 3,
-  while *PuTTY* measures width 4.
+  while *xterm.js* measures width 4.
 
-.. _puttylangurdu2:
-
-Urdu (2)
-^^^^^^^^
-
-Sequence of language *Urdu (2)* from midpoint of alignment failure records:
-
-.. table::
-   :class: sphinx-datatable
-
-   ===  =========================================  =========  ==========  =========  ===============================
-     #  Codepoint                                  Python     Category      wcwidth  Name
-   ===  =========================================  =========  ==========  =========  ===============================
-     1  `U+0601 <https://codepoints.net/U+0601>`_  '\\u0601'  Cf                  1  ARABIC SIGN SANAH
-     2  `U+06F1 <https://codepoints.net/U+06F1>`_  '\\u06f1'  Nd                  1  EXTENDED ARABIC-INDIC DIGIT ONE
-   ===  =========================================  =========  ==========  =========  ===============================
-
-Total codepoints: 2
-
-
-- Shell test using `printf(1)`_, ``'|'`` should align in output::
-
-        $ printf "\xd8\x81\xdb\xb1|\\n12|\\n"
-        ؁۱|
-        12|
-
-
-.. _puttylangurdu:
-
-Urdu
-^^^^
-
-Sequence of language *Urdu* from midpoint of alignment failure records:
-
-.. table::
-   :class: sphinx-datatable
-
-   ===  =========================================  =========  ==========  =========  ===============================
-     #  Codepoint                                  Python     Category      wcwidth  Name
-   ===  =========================================  =========  ==========  =========  ===============================
-     1  `U+0601 <https://codepoints.net/U+0601>`_  '\\u0601'  Cf                  1  ARABIC SIGN SANAH
-     2  `U+06F1 <https://codepoints.net/U+06F1>`_  '\\u06f1'  Nd                  1  EXTENDED ARABIC-INDIC DIGIT ONE
-   ===  =========================================  =========  ==========  =========  ===============================
-
-Total codepoints: 2
-
-
-- Shell test using `printf(1)`_, ``'|'`` should align in output::
-
-        $ printf "\xd8\x81\xdb\xb1|\\n12|\\n"
-        ؁۱|
-        12|
-
-- python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 1.
-
-.. _puttylangmon:
+.. _xtermjslangmon:
 
 Mon
 ^^^
@@ -932,9 +873,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *xterm.js* measures width 3.
 
-.. _puttylangkhn:
+.. _xtermjslangkhn:
 
 Khün
 ^^^^
@@ -963,48 +904,66 @@ Total codepoints: 4
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *xterm.js* measures width 3.
 
-.. _puttydecmodes:
+.. _xtermjsdecmodes:
 
 DEC Private Modes Support
 +++++++++++++++++++++++++
 
-This Terminal does not appear capable of reporting about any DEC Private modes.
+DEC private modes results for *xterm.js*: 4 changeable modes
+of 4 supported out of 5 total modes tested (80.0% support, 80.0% changeable).
 
-.. _puttykittykbd:
+Complete list of DEC private modes tested:
+
+.. table::
+   :class: sphinx-datatable
+
+   ======  ===================  ============================  ===========  ============  =========
+     Mode  Name                 Description                   Supported    Changeable    Enabled
+   ======  ===================  ============================  ===========  ============  =========
+     1004  FOCUS_IN_OUT_EVENTS  Send FocusIn/FocusOut events  Yes          Yes           No
+     1006  MOUSE_EXTENDED_SGR   Enable SGR Mouse Mode         Yes          Yes           No
+     2004  BRACKETED_PASTE      Set bracketed paste mode      Yes          Yes           No
+     2026  SYNCHRONIZED_OUTPUT  Synchronized Output           Yes          Yes           No
+     2027  GRAPHEME_CLUSTERING  Grapheme Clustering           No           No            No
+   ======  ===================  ============================  ===========  ============  =========
+
+**Summary**: 4 changeable, 1 not changeable.
+
+.. _xtermjskittykbd:
 
 Kitty Keyboard Protocol
 +++++++++++++++++++++++
 
-*PuTTY* does not support the `Kitty keyboard protocol`_.
+*xterm.js* does not support the `Kitty keyboard protocol`_.
 
 .. _`Kitty keyboard protocol`: https://sw.kovidgoyal.net/kitty/keyboard-protocol/
 
-.. _puttyxtgettcap:
+.. _xtermjsxtgettcap:
 
 XTGETTCAP (Terminfo Capabilities)
 +++++++++++++++++++++++++++++++++
 
-*PuTTY* supports the ``XTGETTCAP`` sequence but returned no capabilities.
+*xterm.js* supports the ``XTGETTCAP`` sequence but returned no capabilities.
 
-.. _puttyreproduce:
+.. _xtermjsreproduce:
 
 Reproduction
 ++++++++++++
 
-To reproduce these results for *PuTTY*, install and run ucs-detect_
+To reproduce these results for *xterm.js*, install and run ucs-detect_
 with the following commands::
 
     pip install ucs-detect
-    ucs-detect --rerun data/putty.yaml
+    ucs-detect --rerun data/vscodeterminal.yaml
 
-.. _puttytime:
+.. _xtermjstime:
 
 Test Execution Time
 +++++++++++++++++++
 
-The test suite completed in **9.10 seconds** (9s).
+The test suite completed in **247.10 seconds** (247s).
 
 This time measurement represents the total duration of the test execution,
 including all Unicode wide character tests, emoji ZWJ sequences, variation

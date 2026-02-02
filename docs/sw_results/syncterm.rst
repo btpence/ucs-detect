@@ -1,42 +1,41 @@
-.. _linuxfbdev:
+.. _syncterm:
 
-linux fbdev
------------
+SyncTERM
+--------
 
 
-Tested Software version 6.14.0-37 on Linux.
-The homepage URL of this terminal is https://www.kernel.org/doc/Documentation/fb/fbcon.txt.
+Tested Software version 1.7 on Linux.
 Full results available at ucs-detect_ repository path
-`data/linuxfbdev.yaml <https://github.com/jquast/ucs-detect/blob/master/data/linuxfbdev.yaml>`_.
+`data/syncterm.yaml <https://github.com/jquast/ucs-detect/blob/master/data/syncterm.yaml>`_.
 
-.. _linuxfbdevscores:
+.. _synctermscores:
 
 Score Breakdown
 +++++++++++++++
 
-Detailed breakdown of how scores are calculated for *linux fbdev*:
+Detailed breakdown of how scores are calculated for *SyncTERM*:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  ========================================  ===========  ====================
-     #  Score Type                                Raw Score    Final Scaled Score
-   ===  ========================================  ===========  ====================
-     1  :ref:`WIDE <linuxfbdevwide>`              0.00%        0.0%
-     2  :ref:`ZWJ <linuxfbdevzwj>`                0.00%        0.0%
-     3  :ref:`LANG <linuxfbdevlang>`              0.00%        0.0%
-     4  :ref:`VS16 <linuxfbdevvs16>`              0.00%        0.0%
-     5  :ref:`VS15 <linuxfbdevvs15>`              0.00%        0.0%
-     6  :ref:`Capabilities <linuxfbdevdecmodes>`  0.00%        0.0%
-     7  :ref:`Graphics <linuxfbdevgraphics>`      0%           0.0%
-     8  :ref:`TIME <linuxfbdevtime>`              0.01s        100.0%
-   ===  ========================================  ===========  ====================
+   ===  ======================================  ===========  ====================
+     #  Score Type                              Raw Score    Final Scaled Score
+   ===  ======================================  ===========  ====================
+     1  :ref:`WIDE <synctermwide>`              0.00%        0.0%
+     2  :ref:`ZWJ <synctermzwj>`                0.00%        0.0%
+     3  :ref:`LANG <synctermlang>`              0.00%        0.0%
+     4  :ref:`VS16 <synctermvs16>`              0.00%        0.0%
+     5  :ref:`VS15 <synctermvs15>`              0.00%        0.0%
+     6  :ref:`Capabilities <synctermdecmodes>`  0.00%        0.0%
+     7  :ref:`Graphics <synctermgraphics>`      0%           0.0%
+     8  :ref:`TIME <synctermtime>`              0.06s        84.9%
+   ===  ======================================  ===========  ====================
 
 **Score Comparison Plot:**
 
 The following plot shows how this terminal's scores compare to all other terminals tested.
 
-.. figure:: ../_static/plots/linuxfbdev_scores_scaled.png
+.. figure:: ../_static/plots/syncterm_scores_scaled.png
    :align: center
    :width: 800px
 
@@ -44,7 +43,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 6.67%
+- Raw Final Score: 5.66%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +53,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 1.1%
+- Final Scaled Score: 0.0%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -103,48 +102,48 @@ Scoring: 100% for modern (iTerm2/Kitty), 50% for legacy only (Sixel/ReGIS), 0% f
 
 Test execution time:
 
-- Elapsed time: 0.01 seconds
+- Elapsed time: 0.06 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 100.0%
+- Scaled result: 84.9%
 
 **LANG Score Details (Geometric Mean):**
 
 
-.. _linuxfbdevwide:
+.. _synctermwide:
 
 Wide character support
 ++++++++++++++++++++++
 
-Wide character results for *linux fbdev* are not available.
+Wide character results for *SyncTERM* are not available.
 
-.. _linuxfbdevzwj:
+.. _synctermzwj:
 
 Emoji ZWJ support
 +++++++++++++++++
 
-Emoji ZWJ results for *linux fbdev* are not available.
+Emoji ZWJ results for *SyncTERM* are not available.
 
-.. _linuxfbdevvs16:
+.. _synctermvs16:
 
 Variation Selector-16 support
 +++++++++++++++++++++++++++++
 
-Emoji VS-16 results for *linux fbdev* are not available.
+Emoji VS-16 results for *SyncTERM* are not available.
 
-.. _linuxfbdevvs15:
+.. _synctermvs15:
 
 Variation Selector-15 support
 +++++++++++++++++++++++++++++
 
-Emoji VS-15 results for *linux fbdev* are not available.
+Emoji VS-15 results for *SyncTERM* are not available.
 
-.. _linuxfbdevgraphics:
+.. _synctermgraphics:
 
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*linux fbdev* does not report support for any graphics protocols.
+*SyncTERM* does not report support for any graphics protocols.
 
 **Detection Methods:**
 
@@ -156,64 +155,58 @@ Graphics Protocol Support
 - **iTerm2 inline images**: Detected via the iTerm2 capabilities query
   ``OSC 1337 ; Capabilities``.
 
-**Device Attributes Response:**
-
-- Extensions reported: none
-- Sixel_ indicator (``4``): not present
-- ReGIS_ indicator (``3``): not present
-
 .. _Sixel: https://en.wikipedia.org/wiki/Sixel
 .. _ReGIS: https://en.wikipedia.org/wiki/ReGIS
 .. _`iTerm2 inline images`: https://iterm2.com/documentation-images.html
 .. _`Kitty graphics protocol`: https://sw.kovidgoyal.net/kitty/graphics-protocol/
 
-.. _linuxfbdevlang:
+.. _synctermlang:
 
 Language Support
 ++++++++++++++++
 
-Language results for *linux fbdev* are not available.
+Language results for *SyncTERM* are not available.
 
-.. _linuxfbdevdecmodes:
+.. _synctermdecmodes:
 
 DEC Private Modes Support
 +++++++++++++++++++++++++
 
 This Terminal does not appear capable of reporting about any DEC Private modes.
 
-.. _linuxfbdevkittykbd:
+.. _synctermkittykbd:
 
 Kitty Keyboard Protocol
 +++++++++++++++++++++++
 
-*linux fbdev* does not support the `Kitty keyboard protocol`_.
+*SyncTERM* does not support the `Kitty keyboard protocol`_.
 
 .. _`Kitty keyboard protocol`: https://sw.kovidgoyal.net/kitty/keyboard-protocol/
 
-.. _linuxfbdevxtgettcap:
+.. _synctermxtgettcap:
 
 XTGETTCAP (Terminfo Capabilities)
 +++++++++++++++++++++++++++++++++
 
-*linux fbdev* does not support the ``XTGETTCAP`` sequence.
+*SyncTERM* supports the ``XTGETTCAP`` sequence but returned no capabilities.
 
-.. _linuxfbdevreproduce:
+.. _synctermreproduce:
 
 Reproduction
 ++++++++++++
 
-To reproduce these results for *linux fbdev*, install and run ucs-detect_
+To reproduce these results for *SyncTERM*, install and run ucs-detect_
 with the following commands::
 
     pip install ucs-detect
-    ucs-detect --rerun data/linuxfbdev.yaml
+    ucs-detect --rerun data/syncterm.yaml
 
-.. _linuxfbdevtime:
+.. _synctermtime:
 
 Test Execution Time
 +++++++++++++++++++
 
-The test suite completed in **0.01 seconds** (0s).
+The test suite completed in **0.06 seconds** (0s).
 
 This time measurement represents the total duration of the test execution,
 including all Unicode wide character tests, emoji ZWJ sequences, variation

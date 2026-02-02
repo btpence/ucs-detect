@@ -1,20 +1,19 @@
-.. _putty:
+.. _hyper:
 
-PuTTY
+Hyper
 -----
 
 
-Tested Software version 0.81 on Linux.
-The homepage URL of this terminal is https://www.chiark.greenend.org.uk/~sgtatham/putty/.
+Tested Software version 3.4.1 on Linux.
 Full results available at ucs-detect_ repository path
-`data/putty.yaml <https://github.com/jquast/ucs-detect/blob/master/data/putty.yaml>`_.
+`data/hyper.yaml <https://github.com/jquast/ucs-detect/blob/master/data/hyper.yaml>`_.
 
-.. _puttyscores:
+.. _hyperscores:
 
 Score Breakdown
 +++++++++++++++
 
-Detailed breakdown of how scores are calculated for *PuTTY*:
+Detailed breakdown of how scores are calculated for *Hyper*:
 
 .. table::
    :class: sphinx-datatable
@@ -22,21 +21,21 @@ Detailed breakdown of how scores are calculated for *PuTTY*:
    ===  ===================================  ===========  ====================
      #  Score Type                           Raw Score    Final Scaled Score
    ===  ===================================  ===========  ====================
-     1  :ref:`WIDE <puttywide>`              99.41%       35.4%
-     2  :ref:`ZWJ <puttyzwj>`                0.69%        0.7%
-     3  :ref:`LANG <puttylang>`              97.49%       91.6%
-     4  :ref:`VS16 <puttyvs16>`              50.00%       50.0%
-     5  :ref:`VS15 <puttyvs15>`              0.00%        0.0%
-     6  :ref:`Capabilities <puttydecmodes>`  0.00%        0.0%
-     7  :ref:`Graphics <puttygraphics>`      0%           0.0%
-     8  :ref:`TIME <puttytime>`              9.10s        93.1%
+     1  :ref:`WIDE <hyperwide>`              99.09%       0.0%
+     2  :ref:`ZWJ <hyperzwj>`                0.69%        0.7%
+     3  :ref:`LANG <hyperlang>`              97.49%       91.6%
+     4  :ref:`VS16 <hypervs16>`              50.00%       50.0%
+     5  :ref:`VS15 <hypervs15>`              0.00%        0.0%
+     6  :ref:`Capabilities <hyperdecmodes>`  0.00%        0.0%
+     7  :ref:`Graphics <hypergraphics>`      0%           0.0%
+     8  :ref:`TIME <hypertime>`              466.41s      33.7%
    ===  ===================================  ===========  ====================
 
 **Score Comparison Plot:**
 
 The following plot shows how this terminal's scores compare to all other terminals tested.
 
-.. figure:: ../_static/plots/putty_scores_scaled.png
+.. figure:: ../_static/plots/hyper_scores_scaled.png
    :align: center
    :width: 800px
 
@@ -44,7 +43,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 39.22%
+- Raw Final Score: 35.22%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +53,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 6.5%
+- Final Scaled Score: 0.0%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -62,10 +61,10 @@ The following plot shows how this terminal's scores compare to all other termina
 
 Wide character support calculation:
 
-- Total successful codepoints: 5417
-- Total codepoints tested: 5449
-- Formula: 5417 / 5449
-- Result: 99.41%
+- Total successful codepoints: 1309
+- Total codepoints tested: 1321
+- Formula: 1309 / 1321
+- Result: 99.09%
 
 **ZWJ Score Details:**
 
@@ -123,10 +122,10 @@ Scoring: 100% for modern (iTerm2/Kitty), 50% for legacy only (Sixel/ReGIS), 0% f
 
 Test execution time:
 
-- Elapsed time: 9.10 seconds
+- Elapsed time: 466.41 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 93.1%
+- Scaled result: 33.7%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -136,42 +135,42 @@ Geometric mean calculation:
 - About `geometric mean <https://en.wikipedia.org/wiki/Geometric_mean>`_
 - Result: 97.49%
 
-.. _puttywide:
+.. _hyperwide:
 
 Wide character support
 ++++++++++++++++++++++
 
-Wide character support of *PuTTY* is **99.4%** (32 errors of 5449 codepoints tested).
+Wide character support of *Hyper* is **99.1%** (12 errors of 1321 codepoints tested).
 
 Sequence of a WIDE character, from midpoint of alignment failure records:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  =================================================  =============  ==========  =========  ========================
+   ===  =================================================  =============  ==========  =========  ============================
      #  Codepoint                                          Python         Category      wcwidth  Name
-   ===  =================================================  =============  ==========  =========  ========================
-     1  `U+0001D330 <https://codepoints.net/U+0001D330>`_  '\\U0001d330'  So                  2  TETRAGRAM FOR ENCOUNTERS
-   ===  =================================================  =============  ==========  =========  ========================
+   ===  =================================================  =============  ==========  =========  ============================
+     1  `U+0001D36D <https://codepoints.net/U+0001D36D>`_  '\\U0001d36d'  No                  2  COUNTING ROD TENS DIGIT FIVE
+   ===  =================================================  =============  ==========  =========  ============================
 
 Total codepoints: 1
 
 
 - Shell test using `printf(1)`_, ``'|'`` should align in output::
 
-        $ printf "\xf0\x9d\x8c\xb0|\\n12|\\n"
-        𝌰|
+        $ printf "\xf0\x9d\x8d\xad|\\n12|\\n"
+        𝍭|
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 1.
+  while *Hyper* measures width 1.
 
-.. _puttyzwj:
+.. _hyperzwj:
 
 Emoji ZWJ support
 +++++++++++++++++
 
-Compatibility of *PuTTY* with the Unicode Emoji ZWJ sequence table is **0.7%** (1435 errors of 1445 sequences tested).
+Compatibility of *Hyper* with the Unicode Emoji ZWJ sequence table is **0.7%** (1435 errors of 1445 sequences tested).
 
 Sequence of an Emoji ZWJ Sequence, from midpoint of alignment failure records:
 
@@ -201,14 +200,14 @@ Total codepoints: 8
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 6.
+  while *Hyper* measures width 6.
 
-.. _puttyvs16:
+.. _hypervs16:
 
 Variation Selector-16 support
 +++++++++++++++++++++++++++++
 
-Emoji VS-16 results for *PuTTY* is 213 errors
+Emoji VS-16 results for *Hyper* is 213 errors
 out of 426 total codepoints tested, 50.0% success.
 Sequence of a NARROW Emoji made WIDE by *Variation Selector-16*, from midpoint of alignment failure records:
 
@@ -232,15 +231,15 @@ Total codepoints: 2
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 1.
+  while *Hyper* measures width 1.
 
 
-.. _puttyvs15:
+.. _hypervs15:
 
 Variation Selector-15 support
 +++++++++++++++++++++++++++++
 
-Emoji VS-15 results for *PuTTY* is 158 errors
+Emoji VS-15 results for *Hyper* is 158 errors
 out of 158 total codepoints tested, 0.0% success.
 Sequence of a WIDE Emoji made NARROW by *Variation Selector-15*, from midpoint of alignment failure records:
 
@@ -264,15 +263,15 @@ Total codepoints: 2
         1|
 
 - python `wcwidth.wcswidth()`_ measures width 1,
-  while *PuTTY* measures width 2.
+  while *Hyper* measures width 2.
 
 
-.. _puttygraphics:
+.. _hypergraphics:
 
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*PuTTY* does not report support for any graphics protocols.
+*Hyper* does not report support for any graphics protocols.
 
 **Detection Methods:**
 
@@ -286,7 +285,7 @@ Graphics Protocol Support
 
 **Device Attributes Response:**
 
-- Extensions reported: none
+- Extensions reported: 2
 - Sixel_ indicator (``4``): not present
 - ReGIS_ indicator (``3``): not present
 
@@ -295,7 +294,7 @@ Graphics Protocol Support
 .. _`iTerm2 inline images`: https://iterm2.com/documentation-images.html
 .. _`Kitty graphics protocol`: https://sw.kovidgoyal.net/kitty/graphics-protocol/
 
-.. _puttylang:
+.. _hyperlang:
 
 Language Support
 ++++++++++++++++
@@ -312,30 +311,30 @@ The following 21 languages are not fully supported:
    ======================================================  ==========  =========  =============
    lang                                                      n_errors    n_total  pct_success
    ======================================================  ==========  =========  =============
-   :ref:`Sanskrit <puttylangsanskrit>`                            145        493  70.6%
-   :ref:`Malayalam <puttylangmalayalam>`                          246        845  70.9%
-   :ref:`Bengali <puttylangbengali>`                               96        385  75.1%
-   :ref:`Marathi <puttylangmarathi>`                               86        391  78.0%
-   :ref:`Hindi <puttylanghindi>`                                   82        390  79.0%
-   :ref:`Maithili <puttylangmaithili>`                             71        357  80.1%
-   :ref:`Nepali <puttylangnepali>`                                 69        352  80.4%
-   :ref:`Tamang, Eastern <puttylangtamangeastern>`                 11         70  84.3%
-   :ref:`Gujarati <puttylanggujarati>`                             50        343  85.4%
-   :ref:`Magahi <puttylangmagahi>`                                 43        314  86.3%
-   :ref:`Sanskrit (Grantha) <puttylangsanskritgrantha>`            39        293  86.7%
-   :ref:`Bhojpuri <puttylangbhojpuri>`                             41        313  86.9%
-   :ref:`Telugu <puttylangtelugu>`                                 42        384  89.1%
-   :ref:`Javanese (Javanese) <puttylangjavanesejavanese>`          43        530  91.9%
-   :ref:`Kannada <puttylangkannada>`                               14        287  95.1%
-   :ref:`Burmese <puttylangburmese>`                               10        268  96.3%
-   :ref:`Khmer, Central <puttylangkhmercentral>`                    8        443  98.2%
-   :ref:`Urdu (2) <puttylangurdu2>`                                 1         82  98.8%
-   :ref:`Urdu <puttylangurdu>`                                      1        110  99.1%
-   :ref:`Mon <puttylangmon>`                                        3        332  99.1%
-   :ref:`Khün <puttylangkhn>`                                       1        396  99.7%
+   :ref:`Sanskrit <hyperlangsanskrit>`                            145        493  70.6%
+   :ref:`Malayalam <hyperlangmalayalam>`                          246        845  70.9%
+   :ref:`Bengali <hyperlangbengali>`                               96        385  75.1%
+   :ref:`Marathi <hyperlangmarathi>`                               86        391  78.0%
+   :ref:`Hindi <hyperlanghindi>`                                   82        390  79.0%
+   :ref:`Maithili <hyperlangmaithili>`                             71        357  80.1%
+   :ref:`Nepali <hyperlangnepali>`                                 69        352  80.4%
+   :ref:`Tamang, Eastern <hyperlangtamangeastern>`                 11         70  84.3%
+   :ref:`Gujarati <hyperlanggujarati>`                             50        343  85.4%
+   :ref:`Magahi <hyperlangmagahi>`                                 43        314  86.3%
+   :ref:`Sanskrit (Grantha) <hyperlangsanskritgrantha>`            39        293  86.7%
+   :ref:`Bhojpuri <hyperlangbhojpuri>`                             41        313  86.9%
+   :ref:`Telugu <hyperlangtelugu>`                                 42        384  89.1%
+   :ref:`Javanese (Javanese) <hyperlangjavanesejavanese>`          43        530  91.9%
+   :ref:`Kannada <hyperlangkannada>`                               14        287  95.1%
+   :ref:`Burmese <hyperlangburmese>`                               10        268  96.3%
+   :ref:`Khmer, Central <hyperlangkhmercentral>`                    8        443  98.2%
+   :ref:`Urdu (2) <hyperlangurdu2>`                                 1         82  98.8%
+   :ref:`Urdu <hyperlangurdu>`                                      1        110  99.1%
+   :ref:`Mon <hyperlangmon>`                                        3        332  99.1%
+   :ref:`Khün <hyperlangkhn>`                                       1        396  99.7%
    ======================================================  ==========  =========  =============
 
-.. _puttylangsanskrit:
+.. _hyperlangsanskrit:
 
 Sanskrit
 ^^^^^^^^
@@ -364,7 +363,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangmalayalam:
+.. _hyperlangmalayalam:
 
 Malayalam
 ^^^^^^^^^
@@ -393,9 +392,9 @@ Total codepoints: 4
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *Hyper* measures width 3.
 
-.. _puttylangbengali:
+.. _hyperlangbengali:
 
 Bengali
 ^^^^^^^
@@ -423,9 +422,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *Hyper* measures width 3.
 
-.. _puttylangmarathi:
+.. _hyperlangmarathi:
 
 Marathi
 ^^^^^^^
@@ -454,7 +453,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylanghindi:
+.. _hyperlanghindi:
 
 Hindi
 ^^^^^
@@ -483,7 +482,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangmaithili:
+.. _hyperlangmaithili:
 
 Maithili
 ^^^^^^^^
@@ -512,7 +511,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangnepali:
+.. _hyperlangnepali:
 
 Nepali
 ^^^^^^
@@ -541,7 +540,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangtamangeastern:
+.. _hyperlangtamangeastern:
 
 Tamang, Eastern
 ^^^^^^^^^^^^^^^
@@ -570,7 +569,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylanggujarati:
+.. _hyperlanggujarati:
 
 Gujarati
 ^^^^^^^^
@@ -599,9 +598,9 @@ Total codepoints: 4
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *Hyper* measures width 3.
 
-.. _puttylangmagahi:
+.. _hyperlangmagahi:
 
 Magahi
 ^^^^^^
@@ -630,7 +629,7 @@ Total codepoints: 4
         12|
 
 
-.. _puttylangsanskritgrantha:
+.. _hyperlangsanskritgrantha:
 
 Sanskrit (Grantha)
 ^^^^^^^^^^^^^^^^^^
@@ -658,9 +657,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *Hyper* measures width 3.
 
-.. _puttylangbhojpuri:
+.. _hyperlangbhojpuri:
 
 Bhojpuri
 ^^^^^^^^
@@ -692,9 +691,9 @@ Total codepoints: 7
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 4.
+  while *Hyper* measures width 4.
 
-.. _puttylangtelugu:
+.. _hyperlangtelugu:
 
 Telugu
 ^^^^^^
@@ -722,9 +721,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *Hyper* measures width 3.
 
-.. _puttylangjavanesejavanese:
+.. _hyperlangjavanesejavanese:
 
 Javanese (Javanese)
 ^^^^^^^^^^^^^^^^^^^
@@ -754,9 +753,9 @@ Total codepoints: 5
         1234|
 
 - python `wcwidth.wcswidth()`_ measures width 4,
-  while *PuTTY* measures width 5.
+  while *Hyper* measures width 5.
 
-.. _puttylangkannada:
+.. _hyperlangkannada:
 
 Kannada
 ^^^^^^^
@@ -784,9 +783,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *Hyper* measures width 3.
 
-.. _puttylangburmese:
+.. _hyperlangburmese:
 
 Burmese
 ^^^^^^^
@@ -814,9 +813,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *Hyper* measures width 3.
 
-.. _puttylangkhmercentral:
+.. _hyperlangkhmercentral:
 
 Khmer, Central
 ^^^^^^^^^^^^^^
@@ -846,9 +845,9 @@ Total codepoints: 5
         123|
 
 - python `wcwidth.wcswidth()`_ measures width 3,
-  while *PuTTY* measures width 4.
+  while *Hyper* measures width 4.
 
-.. _puttylangurdu2:
+.. _hyperlangurdu2:
 
 Urdu (2)
 ^^^^^^^^
@@ -875,7 +874,7 @@ Total codepoints: 2
         12|
 
 
-.. _puttylangurdu:
+.. _hyperlangurdu:
 
 Urdu
 ^^^^
@@ -902,9 +901,9 @@ Total codepoints: 2
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 1.
+  while *Hyper* measures width 1.
 
-.. _puttylangmon:
+.. _hyperlangmon:
 
 Mon
 ^^^
@@ -932,9 +931,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *Hyper* measures width 3.
 
-.. _puttylangkhn:
+.. _hyperlangkhn:
 
 Khün
 ^^^^
@@ -963,48 +962,48 @@ Total codepoints: 4
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *PuTTY* measures width 3.
+  while *Hyper* measures width 3.
 
-.. _puttydecmodes:
+.. _hyperdecmodes:
 
 DEC Private Modes Support
 +++++++++++++++++++++++++
 
 This Terminal does not appear capable of reporting about any DEC Private modes.
 
-.. _puttykittykbd:
+.. _hyperkittykbd:
 
 Kitty Keyboard Protocol
 +++++++++++++++++++++++
 
-*PuTTY* does not support the `Kitty keyboard protocol`_.
+*Hyper* does not support the `Kitty keyboard protocol`_.
 
 .. _`Kitty keyboard protocol`: https://sw.kovidgoyal.net/kitty/keyboard-protocol/
 
-.. _puttyxtgettcap:
+.. _hyperxtgettcap:
 
 XTGETTCAP (Terminfo Capabilities)
 +++++++++++++++++++++++++++++++++
 
-*PuTTY* supports the ``XTGETTCAP`` sequence but returned no capabilities.
+*Hyper* does not support the ``XTGETTCAP`` sequence.
 
-.. _puttyreproduce:
+.. _hyperreproduce:
 
 Reproduction
 ++++++++++++
 
-To reproduce these results for *PuTTY*, install and run ucs-detect_
+To reproduce these results for *Hyper*, install and run ucs-detect_
 with the following commands::
 
     pip install ucs-detect
-    ucs-detect --rerun data/putty.yaml
+    ucs-detect --rerun data/hyper.yaml
 
-.. _puttytime:
+.. _hypertime:
 
 Test Execution Time
 +++++++++++++++++++
 
-The test suite completed in **9.10 seconds** (9s).
+The test suite completed in **466.41 seconds** (466s).
 
 This time measurement represents the total duration of the test execution,
 including all Unicode wide character tests, emoji ZWJ sequences, variation

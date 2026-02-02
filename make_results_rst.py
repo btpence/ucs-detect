@@ -190,7 +190,7 @@ def create_score_plots(sw_name, entry, score_table):
         List of all score entries for comparison
     """
     # Collect all scores for comparison
-    metrics = ['WIDE', 'ZWJ', 'LANG', 'VS16', 'VS15', 'Sixel', 'DEC', 'TIME']
+    metrics = ['WIDE', 'ZWJ', 'LANG', 'VS16', 'VS15', 'CAP', 'GFX', 'TIME']
     terminal_scores_scaled = {}
     all_scores_scaled = {}
 
@@ -201,8 +201,8 @@ def create_score_plots(sw_name, entry, score_table):
         'LANG': 'score_language',
         'VS16': 'score_emoji_vs16',
         'VS15': 'score_emoji_vs15',
-        'Sixel': 'score_sixel',
-        'DEC': 'score_dec_modes',
+        'CAP': 'score_capabilities',
+        'GFX': 'score_graphics',
         'TIME': 'score_elapsed',
     }
 
@@ -221,6 +221,14 @@ def create_score_plots(sw_name, entry, score_table):
                               plot_path_scaled, use_scaled=True)
 
     return plot_filename_scaled
+
+
+def _percentile_to_color(pct):
+    """Interpolate HSV shortest path from red (0%) to green (100%)."""
+    # hue 0.0 = red, hue 0.333 = green, interpolate by percentile
+    h = (pct / 100.0) * (1.0 / 3.0)
+    r, g, b = colorsys.hsv_to_rgb(h, 0.7, 0.9)
+    return '#{:02x}{:02x}{:02x}'.format(int(r * 255), int(g * 255), int(b * 255))
 
 
 def _create_multi_metric_plot(terminal_name, scores_dict, all_scores_dict,
@@ -262,8 +270,7 @@ def _create_multi_metric_plot(terminal_name, scores_dict, all_scores_dict,
     fig, ax = plt.subplots(figsize=(8, 4))
 
     x_pos = np.arange(len(metrics))
-    colors = ['#FF6B6B' if p < 33 else '#4ECDC4' if p < 66 else '#95E1D3'
-              for p in percentiles]
+    colors = [_percentile_to_color(p) for p in percentiles]
 
     bars = ax.bar(x_pos, values, color=colors, alpha=0.7, edgecolor='black', linewidth=1.5)
 
@@ -276,6 +283,12 @@ def _create_multi_metric_plot(terminal_name, scores_dict, all_scores_dict,
             ax.hlines(mean_val, i - 0.4, i + 0.4, colors='red',
                      linestyles='dashed', linewidth=2, label='Mean' if i == 0 else '')
 
+    # Add value labels above all bars, drawn on top of mean lines
+    for i, val in enumerate(values):
+        y_pos = max(val, 2)
+        ax.text(i, y_pos + 1, f'{val:.0f}%', ha='center', va='bottom',
+                fontsize=9, fontweight='bold', color='black')
+
     ylabel = 'Final Scaled Score' if use_scaled else 'RAW Score'
     ax.set_ylabel(ylabel, fontsize=12)
     ax.set_title(f'{terminal_name} - {"Scaled" if use_scaled else "Raw"} Scores vs All Terminals',
@@ -287,7 +300,9 @@ def _create_multi_metric_plot(terminal_name, scores_dict, all_scores_dict,
     ax.legend()
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=100, bbox_inches='tight')
+    plt.savefig(output_path, dpi=100, bbox_inches='tight',
+                # 'None' CreationDate is used so the git hash's don't unnecessarily update
+                metadata={'CreationDate': None})
     plt.close()
 
 
@@ -311,7 +326,7 @@ def main():
         display_tabulated_scores(score_table)
         # Definitions removed - not shown in individual terminal pages
         display_common_languages(all_successful_languages)
-        display_dec_modes_feature_table(score_table)
+        display_capabilities_table(score_table)
         display_results_toc(score_table)
         display_common_hyperlinks()
     print('ok', file=sys.stderr)
@@ -333,9 +348,11 @@ def main():
             show_emoji_zwj_results(sw_name, entry)
             show_vs_results(sw_name, entry, '16')
             show_vs_results(sw_name, entry, '15')
-            show_sixel_results(sw_name, entry)
+            show_graphics_results(sw_name, entry)
             show_language_results(sw_name, entry)
             show_dec_modes_results(sw_name, entry)
+            show_kitty_keyboard_results(sw_name, entry)
+            show_xtgettcap_results(sw_name, entry)
             show_reproduce_command(sw_name, entry)
             show_time_elapsed_results(sw_name, entry)
             display_common_hyperlinks()
@@ -400,30 +417,33 @@ def make_score_table():
         for yaml_path in [
             os.path.join(DATA_PATH, fname)
             for fname in os.listdir(DATA_PATH)
-            if fname.endswith(".yaml") and os.path.isfile(os.path.join(DATA_PATH, fname))
-            and fname != 'terminal_detail_mixins.yaml'
+            if fname.endswith(".yaml") and not fname.startswith("_")
+            and fname != "terminal_detail_mixins.yaml"
+            and os.path.isfile(os.path.join(DATA_PATH, fname))
         ]:
             data = yaml.load(open(yaml_path, "r"), Loader=SafeLoader)
 
             # determine score for 'WIDE',
-            version_best_wide = data["test_results"]["unicode_wide_version"]
             _score_wide = score_wide(data)
 
             # 'EMOJI ZWJ',
-            version_best_zwj = data["test_results"]["emoji_zwj_version"]
             _score_zwj = score_zwj(data)
 
             # 'EMOJI VS-16',
-            score_emoji_vs16 = data["test_results"]["emoji_vs16_results"]["9.0.0"]["pct_success"] / 100
+            _vs16_base = data["test_results"].get("emoji_vs16_results", {})
+            if _vs16_base and "9.0.0" in _vs16_base:
+                score_emoji_vs16 = _vs16_base["9.0.0"]["pct_success"] / 100
+            else:
+                score_emoji_vs16 = 0.0
 
             # 'EMOJI VS-15',
             # Support both new (emoji_vs15_results) and old (emoji_vs15_type_a_results) formats
             _vs15_base = data["test_results"].get("emoji_vs15_results",
                                                    data["test_results"].get("emoji_vs15_type_a_results"))
-            if _vs15_base:
+            if _vs15_base and "9.0.0" in _vs15_base:
                 score_emoji_vs15 = _vs15_base["9.0.0"]["pct_success"] / 100
             else:
-                score_emoji_vs15 = float('NaN')
+                score_emoji_vs15 = 0.0
 
             # Language Support,
             score_language = score_lang(data)
@@ -439,6 +459,12 @@ def make_score_table():
             _sixel_support = data.get("terminal_results", {}).get("sixel", False)
             _score_sixel = 1.0 if _sixel_support else 0.0
 
+            # Capabilities score - fraction of notable capabilities supported
+            _score_capabilities = score_capabilities(data)
+
+            # Graphics protocol score - 1.0 modern, 0.5 legacy, 0.0 none
+            _score_graphics = score_graphics(data)
+
             score_table.append(
                 dict(
                     terminal_software_name=data.get("software_name", data.get('software')),
@@ -453,9 +479,9 @@ def make_score_table():
                     score_wide=_score_wide,
                     score_zwj=_score_zwj,
                     score_sixel=_score_sixel,
-                    version_best_wide=version_best_wide,
-                    version_best_zwj=version_best_zwj,
                     sixel_support=_sixel_support,
+                    score_capabilities=_score_capabilities,
+                    score_graphics=_score_graphics,
                     data=data,
                     fname=os.path.basename(yaml_path),
                 )
@@ -464,26 +490,28 @@ def make_score_table():
         print(f"Error in yaml_path={yaml_path}", file=sys.stderr)
         raise
 
-    # Normalize DEC modes and elapsed time scores to 0-1 range
-    # Get valid dec_modes scores
-    valid_dec_modes = [e["score_dec_modes"] for e in score_table if not math.isnan(e["score_dec_modes"])]
-    max_dec_modes = max(valid_dec_modes) if valid_dec_modes else 1.0
-    min_dec_modes = min(valid_dec_modes) if valid_dec_modes else 0.0
-
+    # Normalize elapsed time scores to 0-1 range
     # Get valid elapsed scores
     valid_elapsed = [e["score_elapsed"] for e in score_table if not math.isnan(e["score_elapsed"])]
     max_elapsed = max(valid_elapsed) if valid_elapsed else 1.0
     min_elapsed = min(valid_elapsed) if valid_elapsed else 0.0
 
+    # Normalize DEC modes for display (not used in final score)
+    valid_dec_modes = [e["score_dec_modes"] for e in score_table
+                       if not math.isnan(e["score_dec_modes"])]
+    max_dec_modes = max(valid_dec_modes) if valid_dec_modes else 1.0
+    min_dec_modes = min(valid_dec_modes) if valid_dec_modes else 0.0
+
     # Normalize and calculate final scores
     for entry in score_table:
-        # Normalize DEC modes to 0-1
+        # Normalize DEC modes to 0-1 (for display only)
         if not math.isnan(entry["score_dec_modes"]):
             if max_dec_modes == min_dec_modes:
                 entry["score_dec_modes_norm"] = 1.0
             else:
                 entry["score_dec_modes_norm"] = (
-                    (entry["score_dec_modes"] - min_dec_modes) / (max_dec_modes - min_dec_modes)
+                    (entry["score_dec_modes"] - min_dec_modes)
+                    / (max_dec_modes - min_dec_modes)
                 )
         else:
             entry["score_dec_modes_norm"] = float('NaN')
@@ -497,13 +525,14 @@ def make_score_table():
                 log_elapsed = math.log10(entry["score_elapsed"])
                 log_min = math.log10(min_elapsed)
                 log_max = math.log10(max_elapsed)
-                entry["score_elapsed_norm"] = 1.0 - ((log_elapsed - log_min) / (log_max - log_min))
+                entry["score_elapsed_norm"] = 1.0 - (
+                    (log_elapsed - log_min) / (log_max - log_min))
         else:
             entry["score_elapsed_norm"] = float('NaN')
 
-        # Calculate final score using normalized values with weighted average
+        # Calculate final score using weighted average
         # Time is weighted at 0.5 (half as powerful as other metrics)
-        # Sixel is NOT included in final score - it's tracked separately
+        # Graphics (GFX) scores: 1.0 modern (iTerm2/Kitty), 0.5 legacy (Sixel/ReGIS), 0.0 none
         TIME_WEIGHT = 0.5
         scores_with_weights = [
             (entry["score_language"], 1.0),
@@ -511,7 +540,8 @@ def make_score_table():
             (entry["score_emoji_vs15"], 1.0),
             (entry["score_zwj"], 1.0),
             (entry["score_wide"], 1.0),
-            (entry["score_dec_modes_norm"], 1.0),
+            (entry["score_capabilities"], 1.0),
+            (entry["score_graphics"], 1.0),
             (entry["score_elapsed_norm"], TIME_WEIGHT)
         ]
         valid_scores_with_weights = [(s, w) for s, w in scores_with_weights if not math.isnan(s)]
@@ -537,25 +567,24 @@ def make_score_table():
     # result.
     all_languages = set()
     for entry in result:
+        lang_results = entry["data"]["test_results"].get("language_results") or {}
         all_languages.update(
-            [
-                lang
-                for lang in entry["data"]["test_results"]["language_results"]
-                if entry["data"]["test_results"]["language_results"][lang]["n_errors"] == 0
-            ]
+            lang for lang in lang_results
+            if lang_results[lang]["n_errors"] == 0
         )
 
     all_successful_languages = set()
     for lang in all_languages:
         if all(
-            lang in entry["data"]["test_results"]["language_results"] and
-            entry["data"]["test_results"]["language_results"][lang]["n_errors"] == 0
+            lang in (entry["data"]["test_results"].get("language_results") or {}) and
+            (entry["data"]["test_results"].get("language_results") or {})[lang]["n_errors"] == 0
             for entry in result
         ):
             all_successful_languages.add(lang)
             for entry in result:
-                if lang in entry["data"]["test_results"]["language_results"]:
-                    del entry["data"]["test_results"]["language_results"][lang]
+                lang_results = entry["data"]["test_results"].get("language_results") or {}
+                if lang in lang_results:
+                    del lang_results[lang]
     return result, all_successful_languages
 
 
@@ -573,41 +602,90 @@ def format_score_int(score):
     return f'{round(score*100)}'
 
 
-def _format_sixel_status(result, terminal_mixins):
-    """
-    Format sixel support status as yes/no/maybe with hyperlink to sixel section.
+def _truncate_version(version):
+    """Truncate version string at first '-', appending ellipsis if truncated."""
+    version = str(version) if version is not None else ""
+    if '-' in version:
+        return version.split('-', 1)[0] + '\u2026'
+    return version
 
-    Returns "yes" if supported, "maybe" if terminal has sixel_support_notes,
-    otherwise "no". All values hyperlink to the terminal's sixel section.
-    """
-    sw_name_lower = result["terminal_software_name"].lower()
-    has_notes = (sw_name_lower in terminal_mixins and
-                 'sixel_support_notes' in terminal_mixins[sw_name_lower])
-    sixel_support = result.get("sixel_support", False)
 
-    if sixel_support:
-        status = "yes"
-        score = 1.0
-    elif has_notes:
-        status = "maybe"
-        score = 0.5
-    else:
-        status = "no"
-        score = 0.0
+def _count_capabilities(entry):
+    """Count supported and total notable capabilities for a terminal."""
+    tr = entry["data"].get("terminal_results") or {}
+    if not tr:
+        return 0, 0
 
+    modes = tr.get("modes") or {}
+    n_found = 0
+    n_total = 0
+    for mode_num in (2004, 2026, 1004, 1006, 2027):
+        n_total += 1
+        if _get_dec_mode_supported(modes, mode_num):
+            n_found += 1
+    if tr.get("kitty_keyboard") is not None:
+        n_total += 1
+        n_found += 1
+    elif tr.get("modes"):
+        n_total += 1
+    xtgettcap = tr.get("xtgettcap", {})
+    if xtgettcap.get("supported", False) and bool(xtgettcap.get("capabilities")):
+        n_total += 1
+        n_found += 1
+    elif "xtgettcap" in tr:
+        n_total += 1
+    return n_found, n_total
+
+
+def _format_capabilities_summary(entry, max_caps):
+    """Format detected capabilities as a count with scored hyperlink."""
+    sw_name = entry["terminal_software_name"]
+    n_found, _n_total = _count_capabilities(entry)
+    score = n_found / max_caps if max_caps else 0.0
     return wrap_score_with_hyperlink(
-        status,
-        score,
-        result["terminal_software_name"],
-        "_sixel"
+        str(n_found), score, sw_name, "_dec_modes"
     )
+
+
+def _format_graphics_protocols(entry, sw_name):
+    """
+    Format detected graphics protocols as a comma-joined list with color scoring.
+
+    Green (1.0) for modern protocols (iTerm2, Kitty), yellow (0.5) for legacy
+    only (Sixel, ReGIS), red (0.0) for none.
+    """
+    tr = entry["data"].get("terminal_results") or {}
+    if not tr:
+        return wrap_with_score_role("N/A", float('nan'))
+
+    protocols = []
+    if tr.get("sixel", False):
+        protocols.append("Sixel")
+    da_ext = tr.get("device_attributes", {}).get("extensions", [])
+    if 3 in da_ext:
+        protocols.append("ReGIS")
+    has_modern = False
+    iterm2 = tr.get("iterm2_features", {})
+    if iterm2.get("supported", False):
+        protocols.append("iTerm2")
+        has_modern = True
+    if tr.get("kitty_graphics", False):
+        protocols.append("Kitty")
+        has_modern = True
+
+    if not protocols:
+        return wrap_score_with_hyperlink("none", 0.0, sw_name, "_graphics")
+    score = 1.0 if has_modern else 0.5
+    return wrap_score_with_hyperlink(", ".join(protocols), score, sw_name, "_graphics")
 
 
 def display_tabulated_scores(score_table):
     display_title("Results", 1)
 
     # Introduction and disclaimer
-    print("This is a volunteer-maintained analysis created by and for terminal emulator developers.")
+    print("This is a volunteer-maintained analysis created by and for terminal emulator and ")
+    print("developers and TUI/CLI library developers. ")
+    print()
     print("We welcome productive contributions and corrections to improve the accuracy and")
     print("completeness of these measurements.")
     print()
@@ -615,70 +693,35 @@ def display_tabulated_scores(score_table):
     print()
     print("   These test results are provided as-is and we do not guarantee their correctness.")
     print("   The scores and ratings presented here are objective measurements of Unicode and")
-    print("   terminal feature support, and should not be interpreted as an overall assessment")
-    print("   of terminal emulator quality or a recommendation. Many factors beyond Unicode")
-    print("   support contribute to terminal quality.")
-    print()
-    print(".. note::")
-    print()
+    print("   terminal feature support by analysis of automatic response, and should not be")
+    print("   interpreted as an overall assessment of terminal emulator quality or a")
+    print("   recommendation. Many factors beyond Unicode support contribute to terminal quality.")
     print("   Some terminals may optionally support features and modes not represented here.")
     print("   This data represents only automatic responses received when launched in their")
-    print("   default configurations and packaged build options.")
+    print("   default configurations and packaged build options. Some languages and emoji")
+    print("   tests may also pass 'accidentally'!")
     print()
 
 
     display_title("General Tabulated Summary", 2)
 
-    # Load terminal mixins for checking sixel support notes
-    terminal_mixins = load_terminal_detail_mixins()
-
     tabulated_scores = []
 
+    # determine max capabilities across all terminals for scaling
+    max_caps = max((_count_capabilities(r)[0] for r in score_table), default=1)
+
     for rank, result in enumerate(score_table, start=1):
-        # Get the total number of changeable DEC modes for display
-        dec_modes_count = 0
-        mode_2027_status = "N/A"
-        if not math.isnan(result["score_dec_modes"]):
-            modes = result["data"]["terminal_results"]["modes"]
-            dec_modes_count = sum(1 for mode_data in modes.values() if mode_data.get("changeable", False))
-
-            # Check Mode 2027 (GRAPHEME_CLUSTERING) status
-            if 2027 in modes:
-                mode_2027_data = modes[2027]
-                is_supported = mode_2027_data.get("supported", False)
-                is_enabled = mode_2027_data.get("enabled", False)
-                is_changeable = mode_2027_data.get("changeable", False)
-
-                # Determine status and score based on support, enabled state, and changeability
-                if is_supported and is_enabled:
-                    mode_2027_status = "enabled"
-                    mode_2027_score = 1.0
-                elif is_supported and not is_enabled and is_changeable:
-                    mode_2027_status = "may enable"
-                    mode_2027_score = 0.75
-                else:
-                    mode_2027_status = "no"
-                    mode_2027_score = 0.5
-            else:
-                mode_2027_status = "no"
-                mode_2027_score = 0.5
-        else:
-            mode_2027_score = float('NaN')
-
-        # Create DEC modes display text (just the number, hyperlink will be added by wrap_score_with_hyperlink)
-        dec_modes_display = f"{dec_modes_count}" if not math.isnan(result["score_dec_modes"]) else "0"
-
-        # Create elapsed time display text (integer seconds, no suffix)
-        elapsed_display = f"{int(result['elapsed_seconds'])}" if not math.isnan(result['elapsed_seconds']) else "N/A"
+        # Build capabilities summary count
+        capabilities_list = _format_capabilities_summary(result, max_caps)
 
         tabulated_scores.append(
             {
                 "Rank": rank,
                 "Terminal Software": make_outbound_hyperlink(result["terminal_software_name"]),
-                "Software Version": result["terminal_software_version"],
+                "Software Version": _truncate_version(result["terminal_software_version"]),
                 "OS System": result["os_system"],
 
-                "Final Scaled Score": wrap_score_with_hyperlink(
+                "Score": wrap_score_with_hyperlink(
                     format_score_int(result["score_final_scaled"]),
                     result["score_final_scaled"],
                     result["terminal_software_name"],
@@ -714,25 +757,8 @@ def display_tabulated_scores(score_table):
                     result["terminal_software_name"],
                     "_vs15"
                 ),
-                "Mode 2027": wrap_score_with_hyperlink(
-                    mode_2027_status,
-                    mode_2027_score,
-                    result["terminal_software_name"],
-                    "_dec_modes"
-                ) if not math.isnan(mode_2027_score) else wrap_with_score_role("N/A", 0.0),
-                "DEC Modes": wrap_score_with_hyperlink(
-                    dec_modes_display,
-                    result["score_dec_modes_scaled"] if not math.isnan(result["score_dec_modes_scaled"]) else 0.0,
-                    result["terminal_software_name"],
-                    "_dec_modes"
-                ),
-                "Sixel": _format_sixel_status(result, terminal_mixins),
-                "Elapsed(s)": wrap_score_with_hyperlink(
-                    elapsed_display,
-                    result["score_elapsed_scaled"],
-                    result["terminal_software_name"],
-                    "_time"
-                ),
+                "Capabilities": capabilities_list,
+                "Graphics": _format_graphics_protocols(result, result["terminal_software_name"]),
             }
         )
 
@@ -799,8 +825,9 @@ def scale_scores(score_table, entry, key):
     if math.isnan(my_score):
         return float('NaN')
 
-    # VS16, VS15, and Sixel are not scaled - return raw score (binary 0/1)
-    if key in ('score_emoji_vs16', 'score_emoji_vs15', 'score_sixel'):
+    # VS16, VS15, Sixel, and Graphics are not scaled - return raw score
+    if key in ('score_emoji_vs16', 'score_emoji_vs15', 'score_sixel',
+               'score_graphics'):
         return my_score
 
     valid_scores = [_entry[key] for _entry in score_table if not math.isnan(_entry[key])]
@@ -822,55 +849,27 @@ def scale_scores(score_table, entry, key):
 
 
 def score_zwj(data):
-    """
-    Calculate ZWJ score as the total percentage of successful codepoints across all versions.
-
-    Returns the overall success rate across all ZWJ emoji sequences tested.
-    """
-    zwj_results = data["test_results"]["emoji_zwj_results"]
+    """Calculate ZWJ score as percentage of successful sequences tested."""
+    zwj_results = data["test_results"].get("emoji_zwj_results") or {}
     if not zwj_results:
         return 0.0
-
-    # Calculate total successes and total codepoints across all versions
-    total_success = 0
-    total_tested = 0
-    for version_data in zwj_results.values():
-        n_total = version_data["n_total"]
-        n_errors = version_data["n_errors"]
-        n_success = n_total - n_errors
-        total_success += n_success
-        total_tested += n_total
-
-    if total_tested == 0:
+    result = next(iter(zwj_results.values()))
+    n_total = result["n_total"]
+    if n_total == 0:
         return 0.0
-
-    return total_success / total_tested
+    return (n_total - result["n_errors"]) / n_total
 
 
 def score_wide(data):
-    """
-    Calculate WIDE score as the total percentage of successful codepoints across all versions.
-
-    Returns the overall success rate across all wide character codepoints tested.
-    """
-    wide_results = data["test_results"]["unicode_wide_results"]
+    """Calculate WIDE score as percentage of successful codepoints tested."""
+    wide_results = data["test_results"].get("unicode_wide_results") or {}
     if not wide_results:
         return 0.0
-
-    # Calculate total successes and total codepoints across all versions
-    total_success = 0
-    total_tested = 0
-    for version_data in wide_results.values():
-        n_total = version_data["n_total"]
-        n_errors = version_data["n_errors"]
-        n_success = n_total - n_errors
-        total_success += n_success
-        total_tested += n_total
-
-    if total_tested == 0:
+    result = next(iter(wide_results.values()))
+    n_total = result["n_total"]
+    if n_total == 0:
         return 0.0
-
-    return total_success / total_tested
+    return (n_total - result["n_errors"]) / n_total
 
 
 def score_lang(data):
@@ -920,6 +919,67 @@ def score_dec_modes(data):
     return changeable_modes
 
 
+def score_capabilities(data):
+    """
+    Calculate score as fraction of notable terminal capabilities supported.
+
+    Checks 7 capabilities: Bracketed Paste (mode 2004), Synced Output (mode 2026),
+    Focus Events (mode 1004), Mouse SGR (mode 1006), Graphemes (mode 2027),
+    Kitty Keyboard, and XTGETTCAP.
+
+    :rtype: float
+    :returns: fraction 0.0-1.0 of capabilities supported
+    """
+    tr = data.get("terminal_results") or {}
+    if not tr:
+        return float('NaN')
+
+    modes = tr.get("modes") or {}
+    count = 0
+    total = 7
+
+    for mode_num in (2004, 2026, 1004, 1006, 2027):
+        mode_key = str(mode_num) if str(mode_num) in modes else mode_num
+        if mode_key in modes and modes[mode_key].get("supported", False):
+            count += 1
+
+    if tr.get("kitty_keyboard") is not None:
+        count += 1
+
+    xtgettcap = tr.get("xtgettcap", {})
+    if xtgettcap.get("supported", False) and bool(xtgettcap.get("capabilities")):
+        count += 1
+
+    return count / total
+
+
+def score_graphics(data):
+    """
+    Calculate graphics protocol support score.
+
+    :rtype: float
+    :returns: 1.0 for modern (iTerm2/Kitty), 0.5 for legacy only (Sixel/ReGIS), 0.0 for none
+    """
+    tr = data.get("terminal_results") or {}
+    if not tr:
+        return 0.0
+
+    has_any = False
+    if tr.get("sixel", False):
+        has_any = True
+    da_ext = tr.get("device_attributes", {}).get("extensions", [])
+    if 3 in da_ext:
+        has_any = True
+
+    iterm2 = tr.get("iterm2_features", {})
+    if iterm2.get("supported", False):
+        return 1.0
+    if tr.get("kitty_graphics", False):
+        return 1.0
+
+    return 0.5 if has_any else 0.0
+
+
 def score_elapsed_time(data):
     """
     Calculate score based on elapsed time (inverse - lower is better).
@@ -963,109 +1023,82 @@ def display_common_languages(all_successful_languages):
         print()
 
 
-def display_dec_modes_feature_table(score_table):
+def _capability_yes_no(value, terminal_name, section_suffix):
+    """Format a boolean capability as a scored yes/no with hyperlink."""
+    if value is None:
+        return wrap_with_score_role("N/A", float('nan'))
+    status = "yes" if value else "no"
+    score = 1.0 if value else 0.0
+    return wrap_score_with_hyperlink(
+        status, score, terminal_name, section_suffix)
+
+
+def _get_dec_mode_supported(modes, mode_num):
+    """Check if a DEC mode is supported, handling both int and str keys."""
+    mode_key = str(mode_num) if str(mode_num) in modes else mode_num
+    if mode_key in modes:
+        return modes[mode_key].get('supported', False)
+    return False
+
+
+def display_capabilities_table(score_table):
+    """Display a capabilities comparison table with terminals as rows.
+
+    Mirrors the notable capabilities shown by the ucs-detect CLI tool's
+    ``_build_capabilities_kv_pairs`` output.
     """
-    Display a feature comparison table for DEC Private Modes.
-
-    Shows each mode as a row, with terminals as columns.
-    """
-    # Collect all DEC modes across all terminals
-    terminal_modes = {}  # terminal_name -> {mode_num -> (supported, changeable, mode_data)}
-    terminal_changeable_counts = {}  # terminal_name -> changeable_count
-    all_changeable_modes = set()  # All modes that are changeable by at least one terminal
-    mode_info = {}  # mode_num -> {name, description}
-
-    for entry in score_table:
-        terminal_name = entry["terminal_software_name"]
-
-        # Skip terminals without DEC modes data
-        if ("terminal_results" not in entry["data"] or
-            "modes" not in entry["data"]["terminal_results"]):
-            continue
-
-        modes = entry["data"]["terminal_results"]["modes"]
-        terminal_modes[terminal_name] = {}
-
-        changeable_count = 0
-        for mode_num, mode_data in modes.items():
-            supported = mode_data.get("supported", False)
-            changeable = mode_data.get("changeable", False)
-            terminal_modes[terminal_name][mode_num] = (supported, changeable, mode_data)
-
-            if changeable:
-                all_changeable_modes.add(mode_num)
-                changeable_count += 1
-
-            # Store mode info (name and description) from any terminal that has it
-            if mode_num not in mode_info:
-                mode_info[mode_num] = {
-                    "name": mode_data.get("mode_name", ""),
-                    "description": mode_data.get("mode_description", "")
-                }
-
-        terminal_changeable_counts[terminal_name] = changeable_count
-
-    # Filter out terminals with 0 changeable modes
-    terminals_with_changeable = {
-        name: count for name, count in terminal_changeable_counts.items() if count > 0
-    }
-
-    if not terminals_with_changeable:
-        # No terminals with changeable modes
-        return
-
-    display_title("DEC Private Modes Support", 2)
-    print("This table shows which DEC Private Modes are supported for each terminal.")
-    print("Terminals are sorted by number of changeable modes (most first).")
-    print("Only terminals with at least one changeable mode are shown.")
-    print("Each cell shows 'enabled' if the mode is enabled, 'may enable' if supported")
-    print("but not enabled and can be changed, or 'no' if not supported.")
+    display_title("Terminal Capabilities", 2)
+    print("This table shows notable terminal capabilities for each terminal,")
+    print("matching the feature detection performed by ``ucs-detect``.")
     print()
 
-    # Sort terminals by changeable count (descending)
-    sorted_terminals = sorted(terminals_with_changeable.keys(),
-                             key=lambda t: terminal_changeable_counts[t],
-                             reverse=True)
-
-    # Sort all changeable modes by mode number
-    sorted_modes = sorted(all_changeable_modes, key=int)
-
-    # Build the table data (modes as rows, terminals as columns)
     table_data = []
-    for mode_num in sorted_modes:
-        # Get description and extract right-hand side if '/' present
-        description = mode_info[mode_num]["description"]
-        if '/' in description:
-            # Take the right-hand side after the '/'
-            description = description.split('/', 1)[1].strip()
+    for entry in score_table:
+        sw_name = entry["terminal_software_name"]
+        tr = entry["data"].get("terminal_results") or {}
+        modes = tr.get("modes") or {}
+        da_ext = tr.get("da", {}).get("extensions", [])
+        suffix = "_dec_modes"
+        tested = bool(tr)
 
         row = {
-            "Mode": mode_num,
-            "Description": description,
+            "Terminal": make_outbound_hyperlink(sw_name),
         }
 
-        # Add a column for each terminal
-        for terminal_name in sorted_terminals:
-            if mode_num in terminal_modes[terminal_name]:
-                supported, changeable, mode_data = terminal_modes[terminal_name][mode_num]
-                enabled = mode_data.get("enabled", False)
+        # Notable DEC modes (same as CLI)
+        row["Bracketed Paste"] = _capability_yes_no(
+            _get_dec_mode_supported(modes, 2004) if tested else None,
+            sw_name, suffix)
+        row["Synced Output"] = _capability_yes_no(
+            _get_dec_mode_supported(modes, 2026) if tested else None,
+            sw_name, suffix)
+        row["Focus Events"] = _capability_yes_no(
+            _get_dec_mode_supported(modes, 1004) if tested else None,
+            sw_name, suffix)
+        row["Mouse SGR"] = _capability_yes_no(
+            _get_dec_mode_supported(modes, 1006) if tested else None,
+            sw_name, suffix)
 
-                # Determine status and score based on support, enabled state, and changeability
-                if supported and enabled:
-                    status = "enabled"
-                    score = 1.0
-                elif supported and not enabled and changeable:
-                    status = "may enable"
-                    score = 0.75
-                else:
-                    status = "no"
-                    score = 0.0
+        # Mode 2027 grapheme clustering
+        row["Graphemes"] = _capability_yes_no(
+            _get_dec_mode_supported(modes, 2027) if tested else None,
+            sw_name, suffix)
 
-                # Show status with hyperlink and appropriate color
-                row[terminal_name] = f":sref:`{status} <{make_link(terminal_name + '_dec_modes')}> {int(score * 100)}`"
-            else:
-                # Mode not in this terminal's data - show red "no"
-                row[terminal_name] = wrap_with_score_role("no", 0.0)
+        # Kitty keyboard
+        kitty_kb = tr.get('kitty_keyboard')
+        row["Kitty Kbd"] = _capability_yes_no(
+            (kitty_kb is not None) if tested else None,
+            sw_name, "_kitty_kbd")
+
+        # Graphics protocols
+        row["Graphics"] = _format_graphics_protocols(entry, sw_name)
+
+        # XTGETTCAP — require at least one capability returned
+        xtgettcap = tr.get('xtgettcap', {})
+        row["XTGETTCAP"] = _capability_yes_no(
+            (xtgettcap.get('supported', False)
+             and bool(xtgettcap.get('capabilities'))) if tested else None,
+            sw_name, "_xtgettcap")
 
         table_data.append(row)
 
@@ -1073,7 +1106,7 @@ def display_dec_modes_feature_table(score_table):
         table_str = tabulate.tabulate(table_data, headers="keys", tablefmt="rst")
         print_datatable(table_str)
     else:
-        print("No changeable DEC Private Modes data available for any terminal.")
+        print("No terminal capability data available.")
         print()
 
 
@@ -1120,15 +1153,15 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
         },
         {
             "#": 6,
-            "Score Type": make_outbound_hyperlink("Sixel", sw_name + "_sixel"),
-            "Raw Score": "yes" if entry.get("sixel_support", False) else "no",
-            "Final Scaled Score": format_score_pct(entry["score_sixel_scaled"]),
+            "Score Type": make_outbound_hyperlink("Capabilities", sw_name + "_dec_modes"),
+            "Raw Score": format_raw_score(entry["score_capabilities"]),
+            "Final Scaled Score": format_score_pct(entry["score_capabilities_scaled"]),
         },
         {
             "#": 7,
-            "Score Type": make_outbound_hyperlink("DEC Modes", sw_name + "_dec_modes"),
-            "Raw Score": f"{int(entry['score_dec_modes'])}" if not math.isnan(entry['score_dec_modes']) else "N/A",
-            "Final Scaled Score": format_score_pct(entry["score_dec_modes_scaled"]),
+            "Score Type": make_outbound_hyperlink("Graphics", sw_name + "_graphics"),
+            "Raw Score": f"{entry['score_graphics']*100:.0f}%",
+            "Final Scaled Score": format_score_pct(entry["score_graphics_scaled"]),
         },
         {
             "#": 8,
@@ -1156,11 +1189,14 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
     print(f"**Final Scaled Score Calculation:**")
     print()
     print(f"- Raw Final Score: {format_raw_score(entry['score_final'])}")
-    print(f"  (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + DEC Modes + 0.5*TIME)")
+    print(f"  (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)")
     print(f"  the categorized 'average' absolute support level of this terminal")
-    print(f"  Note: DEC Modes and TIME are normalized to 0-1 range before averaging.")
+    print(f"  Note: TIME is normalized to 0-1 range before averaging.")
     print(f"  TIME is weighted at 0.5 (half as powerful as other metrics).")
-    print(f"  **Sixel support is NOT included in the final score** - it is tracked separately.")
+    print(f"  CAP (Capabilities) is the fraction of 7 notable capabilities supported.")
+    print(f"  GFX (Graphics) scores 100% for modern protocols (iTerm2, Kitty),")
+    print(f"  50% for legacy only (Sixel, ReGIS), 0% for none.")
+    print(f"  Sixel/ReGIS support contributes to the GFX score at 50%.")
     print()
     print(f"- Final Scaled Score: {format_score_pct(entry['score_final_scaled'])}")
     print(f"  (normalized across all terminals tested).")
@@ -1170,22 +1206,16 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
     # Add detailed score breakdowns for each type
     print(f"**WIDE Score Details:**")
     print()
-    wide_results = entry["data"]["test_results"]["unicode_wide_results"]
+    wide_results = entry["data"]["test_results"].get("unicode_wide_results") or {}
     if wide_results:
-        # Calculate totals across all versions
-        total_success = 0
-        total_tested = 0
-        for version_data in wide_results.values():
-            n_total = version_data["n_total"]
-            n_errors = version_data["n_errors"]
-            total_success += (n_total - n_errors)
-            total_tested += n_total
-
+        result = next(iter(wide_results.values()))
+        n_total = result["n_total"]
+        n_success = n_total - result["n_errors"]
         print(f"Wide character support calculation:")
-        print(f"- Total successful codepoints: {total_success}")
-        print(f"- Total codepoints tested: {total_tested}")
-        print(f"- Unicode version tested: {entry['version_best_wide']}")
-        print(f"- Formula: {total_success} / {total_tested}")
+        print()
+        print(f"- Total successful codepoints: {n_success}")
+        print(f"- Total codepoints tested: {n_total}")
+        print(f"- Formula: {n_success} / {n_total}")
         print(f"- Result: {entry['score_wide']*100:.2f}%")
     else:
         print(f"No WIDE character support detected.")
@@ -1193,22 +1223,16 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
 
     print(f"**ZWJ Score Details:**")
     print()
-    zwj_results = entry["data"]["test_results"]["emoji_zwj_results"]
+    zwj_results = entry["data"]["test_results"].get("emoji_zwj_results") or {}
     if zwj_results:
-        # Calculate totals across all versions
-        total_success = 0
-        total_tested = 0
-        for version_data in zwj_results.values():
-            n_total = version_data["n_total"]
-            n_errors = version_data["n_errors"]
-            total_success += (n_total - n_errors)
-            total_tested += n_total
-
+        result = next(iter(zwj_results.values()))
+        n_total = result["n_total"]
+        n_success = n_total - result["n_errors"]
         print(f"Emoji ZWJ (Zero-Width Joiner) support calculation:")
-        print(f"- Total successful sequences: {total_success}")
-        print(f"- Total sequences tested: {total_tested}")
-        print(f"- Unicode Emoji version tested: {entry['version_best_zwj']}")
-        print(f"- Formula: {total_success} / {total_tested}")
+        print()
+        print(f"- Total successful sequences: {n_success}")
+        print(f"- Total sequences tested: {n_total}")
+        print(f"- Formula: {n_success} / {n_total}")
         print(f"- Result: {entry['score_zwj']*100:.2f}%")
     else:
         print(f"No ZWJ support detected.")
@@ -1216,13 +1240,15 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
 
     print(f"**VS16 Score Details:**")
     print()
-    if not math.isnan(entry["score_emoji_vs16"]):
-        vs16_results = entry["data"]["test_results"]["emoji_vs16_results"]["9.0.0"]
+    _vs16_base = entry["data"]["test_results"].get("emoji_vs16_results", {})
+    if _vs16_base and "9.0.0" in _vs16_base:
+        vs16_results = _vs16_base["9.0.0"]
         n_errors = vs16_results["n_errors"]
         n_total = vs16_results["n_total"]
         pct_success = vs16_results["pct_success"]
 
         print(f"Variation Selector-16 support calculation:")
+        print()
         print(f"- Errors: {n_errors} of {n_total} codepoints tested")
         print(f"- Success rate: {pct_success:.1f}%")
         print(f"- Formula: {pct_success:.1f} / 100")
@@ -1233,50 +1259,73 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
 
     print(f"**VS15 Score Details:**")
     print()
-    if not math.isnan(entry["score_emoji_vs15"]):
-        vs15_base = entry["data"]["test_results"].get("emoji_vs15_results",
-                                                       entry["data"]["test_results"].get("emoji_vs15_type_a_results"))
-        if vs15_base:
-            vs15_results = vs15_base["9.0.0"]
-            n_errors = vs15_results["n_errors"]
-            n_total = vs15_results["n_total"]
-            pct_success = vs15_results["pct_success"]
+    vs15_base = entry["data"]["test_results"].get("emoji_vs15_results",
+                                                   entry["data"]["test_results"].get("emoji_vs15_type_a_results"))
+    if vs15_base and "9.0.0" in vs15_base:
+        vs15_results = vs15_base["9.0.0"]
+        n_errors = vs15_results["n_errors"]
+        n_total = vs15_results["n_total"]
+        pct_success = vs15_results["pct_success"]
 
-            print(f"Variation Selector-15 support calculation:")
-            print(f"- Errors: {n_errors} of {n_total} codepoints tested")
-            print(f"- Success rate: {pct_success:.1f}%")
-            print(f"- Formula: {pct_success:.1f} / 100")
-            print(f"- Result: {entry['score_emoji_vs15']*100:.2f}%")
-        else:
-            print(f"VS15 results not available.")
+        print(f"Variation Selector-15 support calculation:")
+        print()
+        print(f"- Errors: {n_errors} of {n_total} codepoints tested")
+        print(f"- Success rate: {pct_success:.1f}%")
+        print(f"- Formula: {pct_success:.1f} / 100")
+        print(f"- Result: {entry['score_emoji_vs15']*100:.2f}%")
     else:
         print(f"VS15 results not available.")
     print()
 
-    print(f"**Sixel Score Details:**")
+    print(f"**Capabilities Score Details:**")
     print()
-    sixel_status = "yes" if entry.get("sixel_support", False) else "no"
-    print(f"Sixel graphics support: **{sixel_status}**")
-    print()
-    print(f"Sixel support is determined by the terminal's response to the Device Attributes")
-    print(f"(DA1) query. Terminals that include '4' in their DA1 extensions response support")
-    print(f"Sixel graphics protocol.")
-    print()
-
-    print(f"**DEC Modes Score Details:**")
-    print()
-    if not math.isnan(entry["score_dec_modes"]):
-        modes = entry["data"]["terminal_results"]["modes"]
-        total_modes = len(modes)
-        changeable_modes = sum(1 for mode_data in modes.values() if mode_data.get("changeable", False))
-
-        print(f"DEC Private Modes support calculation:")
-        print(f"- Changeable modes: {changeable_modes}")
-        print(f"- Total modes tested: {total_modes}")
-        print(f"- Raw score: {int(entry['score_dec_modes'])} modes")
-        print(f"- Scaled: normalized against max changeable modes across all terminals")
+    if not math.isnan(entry["score_capabilities"]):
+        tr = entry["data"].get("terminal_results") or {}
+        modes = tr.get("modes") or {}
+        cap_checks = [
+            ("Bracketed Paste (2004)", _get_dec_mode_supported(modes, 2004)),
+            ("Synced Output (2026)", _get_dec_mode_supported(modes, 2026)),
+            ("Focus Events (1004)", _get_dec_mode_supported(modes, 1004)),
+            ("Mouse SGR (1006)", _get_dec_mode_supported(modes, 1006)),
+            ("Graphemes (2027)", _get_dec_mode_supported(modes, 2027)),
+            ("Kitty Keyboard", tr.get("kitty_keyboard") is not None),
+            ("XTGETTCAP", (tr.get("xtgettcap", {}).get("supported", False)
+                           and bool(tr.get("xtgettcap", {}).get("capabilities")))),
+        ]
+        cap_count = sum(1 for _, v in cap_checks if v)
+        print(f"Notable terminal capabilities ({cap_count} / {len(cap_checks)}):")
+        print()
+        for name, supported in cap_checks:
+            status = "yes" if supported else "no"
+            print(f"- {name}: **{status}**")
+        print()
+        print(f"Raw score: {entry['score_capabilities']*100:.2f}%")
     else:
-        print(f"DEC Modes results not available.")
+        print(f"Capabilities results not available.")
+    print()
+
+    print(f"**Graphics Score Details:**")
+    print()
+    tr = entry["data"].get("terminal_results") or {}
+    gfx_score = entry["score_graphics"]
+    gfx_protocols = []
+    if tr.get("sixel", False):
+        gfx_protocols.append(("Sixel", True))
+    else:
+        gfx_protocols.append(("Sixel", False))
+    da_ext = tr.get("device_attributes", {}).get("extensions", [])
+    gfx_protocols.append(("ReGIS", 3 in da_ext))
+    iterm2 = tr.get("iterm2_features", {})
+    gfx_protocols.append(("iTerm2", iterm2.get("supported", False)))
+    gfx_protocols.append(("Kitty", tr.get("kitty_graphics", False)))
+    supported = [name for name, v in gfx_protocols if v]
+    print(f"Graphics protocol support ({int(gfx_score * 100)}%):")
+    print()
+    for name, detected in gfx_protocols:
+        status = "yes" if detected else "no"
+        print(f"- {name}: **{status}**")
+    print()
+    print(f"Scoring: 100% for modern (iTerm2/Kitty), 50% for legacy only (Sixel/ReGIS), 0% for none")
     print()
 
     print(f"**TIME Score Details:**")
@@ -1285,6 +1334,7 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
         elapsed = entry["elapsed_seconds"]
 
         print(f"Test execution time:")
+        print()
         print(f"- Elapsed time: {elapsed:.2f} seconds")
         print(f"- Note: This is a raw measurement; lower is better")
         print(f"- Scaled score uses inverse log10 scaling across all terminals")
@@ -1295,12 +1345,13 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
 
     print(f"**LANG Score Details (Geometric Mean):**")
     print()
-    lang_results = entry["data"]["test_results"]["language_results"]
+    lang_results = entry["data"]["test_results"].get("language_results") or {}
     if lang_results:
         n = len(lang_results)
         geo_mean = entry["score_language"]
 
         print(f"Geometric mean calculation:")
+        print()
         print(f"- Formula: (p₁ × p₂ × ... × pₙ)^(1/n) where n = {n} languages")
         print(f"- About `geometric mean <https://en.wikipedia.org/wiki/Geometric_mean>`_")
         print(f"- Result: {geo_mean*100:.2f}%")
@@ -1328,20 +1379,19 @@ def show_wide_character_support(sw_name, entry):
     display_inbound_hyperlink(entry["terminal_software_name"] + "_wide")
     display_title("Wide character support", 3)
     wide_results = entry["data"]["test_results"]["unicode_wide_results"]
-    unicode_version = entry["version_best_wide"]
-    if unicode_version and unicode_version in wide_results:
-        result = wide_results[unicode_version]
+    if wide_results:
+        result = next(iter(wide_results.values()))
         pct = result["pct_success"]
         print(
-            f"Compatibility of *{sw_name}* with Unicode {unicode_version} Wide character "
-            f"table is **{pct:0.1f}%** ({result['n_errors']} errors "
+            f"Wide character support of *{sw_name}* "
+            f"is **{pct:0.1f}%** ({result['n_errors']} errors "
             f"of {result['n_total']} codepoints tested)."
         )
         print()
         if result["n_errors"] > 0:
             fail_record = find_best_failure(result["failed_codepoints"])
             show_record_failure(
-                sw_name, f"of a WIDE character from Unicode {unicode_version},", fail_record
+                sw_name, "of a WIDE character,", fail_record
             )
     else:
         print(f"Wide character results for *{sw_name}* are not available.")
@@ -1351,23 +1401,24 @@ def show_wide_character_support(sw_name, entry):
 def show_emoji_zwj_results(sw_name, entry):
     display_inbound_hyperlink(entry["terminal_software_name"] + "_zwj")
     display_title("Emoji ZWJ support", 3)
-    zwj_results = entry["data"]["test_results"]["emoji_zwj_results"]
-    # aggregate across all emoji versions tested
-    total_errors = sum(r["n_errors"] for r in zwj_results.values())
-    total_tested = sum(r["n_total"] for r in zwj_results.values())
-    pct = ((total_tested - total_errors) / total_tested * 100) if total_tested else 0
+    zwj_results = entry["data"]["test_results"].get("emoji_zwj_results") or {}
+    if not zwj_results:
+        print(f"Emoji ZWJ results for *{sw_name}* are not available.")
+        print()
+        return
+    result = next(iter(zwj_results.values()))
+    n_errors = result["n_errors"]
+    n_total = result["n_total"]
+    pct = ((n_total - n_errors) / n_total * 100) if n_total else 0
     print(
         f"Compatibility of *{sw_name}* with the Unicode Emoji ZWJ sequence "
-        f"table is **{pct:0.1f}%** ({total_errors} errors "
-        f"of {total_tested} sequences tested)."
+        f"table is **{pct:0.1f}%** ({n_errors} errors "
+        f"of {n_total} sequences tested)."
     )
     print()
-    # show one example failure from the version with most errors
-    for ver in zwj_results:
-        if zwj_results[ver]["n_errors"] > 0:
-            fail_record = find_best_failure(zwj_results[ver]["failed_codepoints"])
-            show_record_failure(sw_name, "of an Emoji ZWJ Sequence,", fail_record)
-            break
+    if n_errors > 0:
+        fail_record = find_best_failure(result["failed_codepoints"])
+        show_record_failure(sw_name, "of an Emoji ZWJ Sequence,", fail_record)
 
 
 def show_vs_results(sw_name, entry, variation_str):
@@ -1376,13 +1427,13 @@ def show_vs_results(sw_name, entry, variation_str):
 
     # Check if the VS results exist (e.g., VS15 might not be available for all terminals)
     vs_results_key = f"emoji_vs{variation_str}_results"
-    if vs_results_key not in entry["data"]["test_results"]:
+    vs_data = entry["data"]["test_results"].get(vs_results_key, {})
+    if not vs_data or "9.0.0" not in vs_data:
         print(f"Emoji VS-{variation_str} results for *{sw_name}* are not available.")
         print()
         return
 
-    show_failed_version = "9.0.0"  # static table, '9.0.0' in beta PR of wcwidth,
-    records = entry["data"]["test_results"][vs_results_key][show_failed_version]
+    records = vs_data["9.0.0"]
     n_errors = records["n_errors"]
     n_total = records["n_total"]
     pct_success = records["pct_success"]
@@ -1399,71 +1450,70 @@ def show_vs_results(sw_name, entry, variation_str):
     print()
 
 
-def show_sixel_results(sw_name, entry):
-    """
-    Display Sixel graphics support results.
-    """
-    display_inbound_hyperlink(entry["terminal_software_name"] + "_sixel")
-    display_title("Sixel Graphics Support", 3)
+def show_graphics_results(sw_name, entry):
+    """Display graphics protocol support results."""
+    display_inbound_hyperlink(entry["terminal_software_name"] + "_graphics")
+    display_title("Graphics Protocol Support", 3)
 
-    # Load terminal mixins to check for notes
+    tr = entry["data"].get("terminal_results") or {}
+    sixel_supported = tr.get("sixel", False)
+    da_ext = tr.get("device_attributes", {}).get("extensions", [])
+    regis_supported = 3 in da_ext
+    kitty_supported = tr.get("kitty_graphics", False)
+    iterm2_supported = tr.get("iterm2_features", {}).get("supported", False)
+
+    protocols = []
+    if sixel_supported:
+        protocols.append("Sixel_")
+    if regis_supported:
+        protocols.append("ReGIS_")
+    if iterm2_supported:
+        protocols.append("`iTerm2 inline images`_")
+    if kitty_supported:
+        protocols.append("`Kitty graphics protocol`_")
+
+    if protocols:
+        print(f"*{sw_name}* supports the following graphics protocols: "
+              f"{', '.join(protocols)}.")
+    else:
+        print(f"*{sw_name}* does not report support for any graphics protocols.")
+    print()
+
+    # Load terminal mixins for sixel notes
     terminal_mixins = load_terminal_detail_mixins()
     sw_name_lower = entry["terminal_software_name"].lower()
     has_notes = (sw_name_lower in terminal_mixins and
                  'sixel_support_notes' in terminal_mixins[sw_name_lower])
-    sixel_supported = entry.get("sixel_support", False)
-
-    # Determine category
-    if sixel_supported:
-        category = "yes"
-        print(f"*{sw_name}* reports to **support Sixel graphics** by automatic sequence response.")
-    elif has_notes:
-        category = "maybe"
-        print(f"*{sw_name}* does **not report to support Sixel graphics** in its default configuration")
-        print(f"by automatic sequence response.")
-    else:
-        category = "no"
-        print(f"*{sw_name}* is **not known to support Sixel graphics** by automatic sequence response.")
-    print()
-
-    # Show notes for "maybe" terminals
     if has_notes:
         notes = terminal_mixins[sw_name_lower]['sixel_support_notes']
         print(f"**Note:** {notes}")
         print()
 
-    print(f"**Sixel Support Categories:**")
+    print("**Detection Methods:**")
     print()
-    print(f"- **yes**: This terminal reports to support Sixel graphics by automatic sequence response.")
-    print(f"- **no**: This terminal is not known to support Sixel graphics by automatic sequence response.")
-    print(f"- **maybe**: This terminal does not report to support Sixel graphics in its default")
-    print(f"  configuration by automatic sequence response.")
-    print()
-
-    print(f"**Detection Method:**")
-    print()
-    print(f"Sixel_ support is determined by the terminal's response to the Device Attributes (DA1)")
-    print(f"query sequence ``CSI c`` (``\\x1b[c``). The terminal responds with:")
-    print()
-    print(f"``CSI ? Psc ; Ps1 ; Ps2 ; ... ; Psn c``")
-    print()
-    print(f"Where ``Psc`` is the service class and ``Ps1`` through ``Psn`` are extension codes.")
-    print(f"Terminals that include extension code ``4`` in their response indicate support for")
-    print(f"the Sixel_ graphics, a complex legacy inline image rendering protocol.")
+    print("- **Sixel** and **ReGIS**: Detected via the Device Attributes (DA1) query")
+    print("  ``CSI c`` (``\\x1b[c``). Extension code ``4`` indicates Sixel_ support,")
+    print("  ``3`` ReGIS_.")
+    print("- **Kitty graphics**: Detected by sending a Kitty graphics query and")
+    print("  checking for an ``OK`` response.")
+    print("- **iTerm2 inline images**: Detected via the iTerm2 capabilities query")
+    print("  ``OSC 1337 ; Capabilities``.")
     print()
 
-    # Show DA1 response if available
-    if "terminal_results" in entry["data"] and "device_attributes" in entry["data"]["terminal_results"]:
-        da1_data = entry["data"]["terminal_results"]["device_attributes"]
+    if tr.get("device_attributes"):
+        da1_data = tr["device_attributes"]
         extensions = da1_data.get("extensions", [])
-
-        print(f"**Device Attributes Response:**")
+        print("**Device Attributes Response:**")
         print()
         print(f"- Extensions reported: {', '.join(map(str, extensions)) if extensions else 'none'}")
         print(f"- Sixel_ indicator (``4``): {'present' if 4 in extensions else 'not present'}")
+        print(f"- ReGIS_ indicator (``3``): {'present' if 3 in extensions else 'not present'}")
         print()
 
     print('.. _Sixel: https://en.wikipedia.org/wiki/Sixel')
+    print('.. _ReGIS: https://en.wikipedia.org/wiki/ReGIS')
+    print('.. _`iTerm2 inline images`: https://iterm2.com/documentation-images.html')
+    print('.. _`Kitty graphics protocol`: https://sw.kovidgoyal.net/kitty/graphics-protocol/')
     print()
 
 
@@ -1475,10 +1525,14 @@ def display_title(text, depth):
 def show_language_results(sw_name, entry):
     display_inbound_hyperlink(entry["terminal_software_name"] + "_lang")
     display_title("Language Support", 3)
+    lang_results = entry["data"]["test_results"].get("language_results") or {}
+    if not lang_results:
+        print(f"Language results for *{sw_name}* are not available.")
+        print()
+        return
     languages_successful = [
-        lang
-        for lang in entry["data"]["test_results"]["language_results"]
-        if entry["data"]["test_results"]["language_results"][lang]["n_errors"] == 0
+        lang for lang in lang_results
+        if lang_results[lang]["n_errors"] == 0
     ]
 
     if len(languages_successful) > 0:
@@ -1492,28 +1546,32 @@ def show_language_results(sw_name, entry):
 
     languages_failed = [
         lang
-        for lang in entry["data"]["test_results"]["language_results"]
-        if entry["data"]["test_results"]["language_results"][lang]["n_errors"] > 0
+        for lang in lang_results
+        if lang_results[lang]["n_errors"] > 0
     ]
     languages_failed.sort(
-        key=lambda lang: entry["data"]["test_results"]["language_results"][lang]["pct_success"]
+        key=lambda lang: lang_results[lang]["pct_success"]
     )
     tabulated_failed_language_results = [
         {
             "lang": make_outbound_hyperlink(lang, sw_name + "_lang_" + lang),
-            "n_errors": entry["data"]["test_results"]["language_results"][lang]["n_errors"],
-            "n_total": entry["data"]["test_results"]["language_results"][lang]["n_total"],
-            "pct_success": f'{entry["data"]["test_results"]["language_results"][lang]["pct_success"]:0.1f}%',
+            "n_errors": lang_results[lang]["n_errors"],
+            "n_total": lang_results[lang]["n_total"],
+            "pct_success": f'{lang_results[lang]["pct_success"]:0.1f}%',
         }
         for lang in languages_failed
     ]
 
+    if not languages_failed:
+        print("All tested languages are fully supported.")
+        print()
+        return
     print(f"The following {len(languages_failed)} languages are not fully supported:")
     print()
     table_str = tabulate.tabulate(tabulated_failed_language_results, headers="keys", tablefmt="rst")
     print_datatable(table_str)
     for failed_lang in languages_failed:
-        fail_record = entry["data"]["test_results"]["language_results"][failed_lang]["failed"][0]
+        fail_record = lang_results[failed_lang]["failed"][0]
         display_inbound_hyperlink(sw_name + "_lang_" + failed_lang)
         display_title(failed_lang, 4)
         show_record_failure(sw_name, f"of language *{failed_lang}*", fail_record)
@@ -1600,6 +1658,98 @@ def show_dec_modes_results(sw_name, entry):
     print()
 
 
+def show_kitty_keyboard_results(sw_name, entry):
+    """Display Kitty keyboard protocol detection results."""
+    display_inbound_hyperlink(entry["terminal_software_name"] + "_kitty_kbd")
+    display_title("Kitty Keyboard Protocol", 3)
+
+    tr = entry["data"].get("terminal_results") or {}
+    kitty_kb = tr.get("kitty_keyboard")
+
+    if kitty_kb is None:
+        print(f"*{sw_name}* does not support the `Kitty keyboard protocol`_.")
+        print()
+        print('.. _`Kitty keyboard protocol`: '
+              'https://sw.kovidgoyal.net/kitty/keyboard-protocol/')
+        print()
+        return
+
+    print(f"*{sw_name}* supports the `Kitty keyboard protocol`_.")
+    print()
+
+    flags = [
+        ("disambiguate", "Disambiguate escape codes"),
+        ("report_events", "Report event types"),
+        ("report_alternates", "Report alternate keys"),
+        ("report_all_keys", "Report all keys as escape codes"),
+        ("report_text", "Report associated text"),
+    ]
+
+    tabulated_flags = []
+    for idx, (key, description) in enumerate(flags, start=1):
+        value = kitty_kb.get(key, False)
+        tabulated_flags.append({
+            "#": idx,
+            "Flag": description,
+            "Key": f"``{key}``",
+            "State": "Yes" if value else "No",
+        })
+
+    table_str = tabulate.tabulate(tabulated_flags, headers="keys", tablefmt="rst")
+    print_datatable(table_str)
+
+    print("Detection is performed by sending ``CSI ? u`` to query the current")
+    print("progressive enhancement flags. A terminal that supports this protocol")
+    print("responds with the active flags value.")
+    print()
+    print('.. _`Kitty keyboard protocol`: '
+          'https://sw.kovidgoyal.net/kitty/keyboard-protocol/')
+    print()
+
+
+def show_xtgettcap_results(sw_name, entry):
+    """Display XTGETTCAP terminfo capability query results."""
+    display_inbound_hyperlink(entry["terminal_software_name"] + "_xtgettcap")
+    display_title("XTGETTCAP (Terminfo Capabilities)", 3)
+
+    tr = entry["data"].get("terminal_results") or {}
+    xtgettcap = tr.get("xtgettcap", {})
+
+    if not xtgettcap.get("supported", False):
+        print(f"*{sw_name}* does not support the ``XTGETTCAP`` sequence.")
+        print()
+        return
+
+    capabilities = xtgettcap.get("capabilities", {})
+    if not capabilities:
+        print(f"*{sw_name}* supports the ``XTGETTCAP`` sequence but returned no capabilities.")
+        print()
+        return
+
+    print(f"*{sw_name}* supports the ``XTGETTCAP`` sequence and reports "
+          f"**{len(capabilities)}** terminfo capabilities.")
+    print()
+
+    tabulated_caps = []
+    for idx, (key, value) in enumerate(sorted(capabilities.items()), start=1):
+        display_value = str(value)
+        if len(display_value) > 60:
+            display_value = display_value[:57] + "..."
+        tabulated_caps.append({
+            "#": idx,
+            "Capability": f"``{key}``",
+            "Value": f"``{display_value}``" if display_value else "*(empty)*",
+        })
+
+    table_str = tabulate.tabulate(tabulated_caps, headers="keys", tablefmt="rst")
+    print_datatable(table_str)
+
+    print("The ``XTGETTCAP`` sequence (``DCS + q Pt ST``) allows applications to query")
+    print("terminfo capabilities directly from the terminal emulator, rather than relying")
+    print("on the system terminfo database.")
+    print()
+
+
 def show_reproduce_command(sw_name, entry):
     """
     Display command to reproduce the test results.
@@ -1615,26 +1765,7 @@ def show_reproduce_command(sw_name, entry):
     print(f"with the following commands::")
     print()
     print(f"    pip install ucs-detect")
-
-    # Build the command with available parameters
-    cmd_parts = [f"ucs-detect --save-yaml={fname}"]
-
-    # Add limit parameters if they exist
-    if "limit_codepoints" in session_args:
-        cmd_parts.append(f"--limit-codepoints={session_args['limit_codepoints']}")
-    if "limit_words" in session_args:
-        cmd_parts.append(f"--limit-words={session_args['limit_words']}")
-    if "limit_errors" in session_args:
-        cmd_parts.append(f"--limit-errors={session_args['limit_errors']}")
-
-    # Join command parts with line continuation for readability
-    if len(cmd_parts) > 1:
-        print(f"    {cmd_parts[0]} \\")
-        for part in cmd_parts[1:-1]:
-            print(f"        {part} \\")
-        print(f"        {cmd_parts[-1]}")
-    else:
-        print(f"    {cmd_parts[0]}")
+    print(f"    ucs-detect --rerun data/{fname}")
 
     print()
 
@@ -1678,7 +1809,8 @@ def show_record_failure(sw_name, whatis, fail_record):
     if fail_record.get("delta_ypos", 0) != 0:
         print(f"- Cursor Y-Position moved {fail_record['delta_ypos']} rows"
               " where no movement is expected.")
-    elif fail_record["measured_by_wcwidth"] != fail_record["measured_by_terminal"]:
+    elif "measured_by_terminal" in fail_record and (
+            fail_record["measured_by_wcwidth"] != fail_record["measured_by_terminal"]):
         print(f"- python `wcwidth.wcswidth()`_ measures width"
               f" {fail_record['measured_by_wcwidth']},")
         print(f"  while *{sw_name}* measures width"
