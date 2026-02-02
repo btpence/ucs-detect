@@ -619,6 +619,8 @@ def _count_capabilities(entry):
     modes = tr.get("modes") or {}
     n_found = 0
     n_total = 0
+    # TODO: add 2048 (In-Band Resize) and 5522 (Bracketed Paste MIME)
+    # once data has been re-collected for all terminals
     for mode_num in (2004, 2026, 1004, 1006, 2027):
         n_total += 1
         if _get_dec_mode_supported(modes, mode_num):
@@ -930,6 +932,9 @@ def score_capabilities(data):
     :rtype: float
     :returns: fraction 0.0-1.0 of capabilities supported
     """
+    # todo: Add In-Band Resize (2048) and Bracketed Paste MIME (5522)
+    # once data has been re-collected for all terminals.
+
     tr = data.get("terminal_results") or {}
     if not tr:
         return float('NaN')
@@ -938,6 +943,8 @@ def score_capabilities(data):
     count = 0
     total = 7
 
+    # TODO: add 2048 (In-Band Resize) and 5522 (Bracketed Paste MIME)
+    # once data has been re-collected for all terminals
     for mode_num in (2004, 2026, 1004, 1006, 2027):
         mode_key = str(mode_num) if str(mode_num) in modes else mode_num
         if mode_key in modes and modes[mode_key].get("supported", False):
@@ -1072,6 +1079,10 @@ def display_capabilities_table(score_table):
         row["Synced Output"] = _capability_yes_no(
             _get_dec_mode_supported(modes, 2026) if tested else None,
             sw_name, suffix)
+        # TODO: add once data has been re-collected for all terminals
+        # row["In-Band Resize"] = _capability_yes_no(
+        #     _get_dec_mode_supported(modes, 2048) if tested else None,
+        #     sw_name, suffix)
         row["Focus Events"] = _capability_yes_no(
             _get_dec_mode_supported(modes, 1004) if tested else None,
             sw_name, suffix)
@@ -1083,6 +1094,10 @@ def display_capabilities_table(score_table):
         row["Graphemes"] = _capability_yes_no(
             _get_dec_mode_supported(modes, 2027) if tested else None,
             sw_name, suffix)
+        # TODO: add once data has been re-collected for all terminals
+        # row["BP MIME"] = _capability_yes_no(
+        #     _get_dec_mode_supported(modes, 5522) if tested else None,
+        #     sw_name, suffix)
 
         # Kitty keyboard
         kitty_kb = tr.get('kitty_keyboard')
@@ -1285,9 +1300,12 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
         cap_checks = [
             ("Bracketed Paste (2004)", _get_dec_mode_supported(modes, 2004)),
             ("Synced Output (2026)", _get_dec_mode_supported(modes, 2026)),
+            # TODO: add once data has been re-collected for all terminals
+            # ("In-Band Resize (2048)", _get_dec_mode_supported(modes, 2048)),
             ("Focus Events (1004)", _get_dec_mode_supported(modes, 1004)),
             ("Mouse SGR (1006)", _get_dec_mode_supported(modes, 1006)),
             ("Graphemes (2027)", _get_dec_mode_supported(modes, 2027)),
+            # ("Bracketed Paste MIME (5522)", _get_dec_mode_supported(modes, 5522)),
             ("Kitty Keyboard", tr.get("kitty_keyboard") is not None),
             ("XTGETTCAP", (tr.get("xtgettcap", {}).get("supported", False)
                            and bool(tr.get("xtgettcap", {}).get("capabilities")))),

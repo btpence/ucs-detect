@@ -71,8 +71,10 @@ NOTABLE_DEC_MODES = [
     2004,  # Bracketed Paste
     2026,  # Synchronized Output
     2027,  # Grapheme Clustering
+    2048,  # In-Band Resize Notifications
     1004,  # Focus Events
     1006,  # Mouse SGR
+    5522,  # Bracketed Paste MIME
 ]
 
 

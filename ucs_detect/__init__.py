@@ -467,8 +467,10 @@ def _build_capabilities_kv_pairs(term, results):
         notable_modes = [
             (2004, "Bracketed Paste?"),
             (2026, "Synchronized Output?"),
+            (2048, "In-Band Resize?"),
             (1004, "Focus Events?"),
             (1006, "Mouse SGR?"),
+            (5522, "Bracketed Paste MIME?"),
         ]
         for mode_num, mode_label in notable_modes:
             mode_key = str(mode_num) if str(mode_num) in modes else mode_num
