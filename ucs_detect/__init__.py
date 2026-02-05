@@ -20,27 +20,37 @@ using :meth:`blessed.Terminal.get_location`.
 # std imports
 import os
 import sys
+import json
 import time
 import locale
 import argparse
-import functools
-import platform
 import datetime
+import platform
+import functools
+import contextlib
 
 # 3rd party
+import yaml
 import blessed
 import wcwidth
-import yaml
+import prettytable
 
 # local
-from ucs_detect.table_zwj import EMOJI_ZWJ_SEQUENCES
-from ucs_detect.table_wide import WIDE_CHARACTERS
-from ucs_detect.table_vs16 import VS16_NARROW_TO_WIDE
-from ucs_detect.table_vs15 import VS15_WIDE_TO_NARROW
-from ucs_detect.table_lang import LANG_GRAPHEMES
 from ucs_detect import measure, terminal
+from ucs_detect.table_zwj import EMOJI_ZWJ_SEQUENCES
+from ucs_detect.table_lang import LANG_GRAPHEMES
+from ucs_detect.table_vs15 import VS15_WIDE_TO_NARROW
+from ucs_detect.table_vs16 import VS16_NARROW_TO_WIDE
+from ucs_detect.table_wide import WIDE_CHARACTERS
 from ucs_detect.error_matcher import ErrorMatcher
 
+
+def _utcnow_str():
+    """Return current UTC time as a formatted string."""
+    if (sys.version_info.major, sys.version_info.minor) > (3, 10):
+        return datetime.datetime.now(
+            datetime.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+    return datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
 
 def merge_results(base_results, additional_results):
@@ -77,6 +87,7 @@ def merge_results(base_results, additional_results):
 
 def init_term(stream):
     locale.setlocale(locale.LC_ALL, "")
+    # local
     from ucs_detect.terminal import make_terminal
     stream_arg = sys.__stderr__ if stream == "stderr" else None
     term = make_terminal(stream=stream_arg)
@@ -86,13 +97,22 @@ def init_term(stream):
     return term, writer
 
 
-def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes_pct, limit_codepoints_wide_pct, include_uncommon_codepoints, save_yaml, no_terminal_test, no_languages_test, timeout_cps, timeout_query, stop_at_error, set_software_name, set_software_version, limit_category_time=0, cursor_report_delay_ms=0, detect_all_dec_modes=False, test_only="all", **_kwargs):
+def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes_pct, limit_codepoints_wide_pct, include_uncommon_codepoints, save_yaml, save_json, no_terminal_test, no_languages_test, timeout_cps, timeout_query, stop_at_error, set_software_name, set_software_version, limit_category_time=0, cursor_report_delay_ms=0, detect_all_dec_modes=False, test_only="all", verify_software_name_and_version=False, terminal_full_probe=False, silent=False, no_final_summary=False, **_kwargs):
     """Program entry point."""
 
     def _should_run(*categories):
         return test_only == "all" or test_only in categories
 
     term, writer = init_term(stream)
+
+    # Detect background color early for silent mode
+    bg_rgb = None
+    if silent:
+        r, g, b = term.get_bgcolor()
+        if (r, g, b) != (-1, -1, -1):
+            bg_rgb = (r >> 8, g >> 8, b >> 8)
+        else:
+            bg_rgb = (0, 0, 0)  # fallback to black
 
     error_matcher = ErrorMatcher(stop_at_error)
 
@@ -102,18 +122,41 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
         for k in ("stream", "limit_codepoints", "limit_errors", "limit_graphemes",
                   "limit_graphemes_pct", "limit_category_time")
     }
-    writer(f"ucs-detect: {display_args(session_arguments)})")
+    if not silent:
+        writer(f"ucs-detect: {display_args(session_arguments)})")
 
     cps_tracker = measure.CPSTracker()
 
     with cps_tracker.timing() as done_ok:
         if measure.get_location_with_retry(term, timeout_cps) == (-1, -1):
-            raise RuntimeError(
-                f"Not a terminal or Timeout exceeded"
-                f" ({timeout_cps:.1f}s)!")
+            error_msg = (f"Not a terminal or Timeout exceeded"
+                         f" ({timeout_cps:.1f}s)")
+            writer(f"\nucs-detect: {error_msg}\n")
+            if save_yaml or save_json:
+                _save_results(
+                    save_yaml, save_json,
+                    session_arguments=session_arguments,
+                    software_name=set_software_name or "unknown",
+                    software_version=set_software_version or "unknown",
+                    seconds_elapsed=0,
+                    width=term.width,
+                    height=term.height,
+                    ambiguous_width=-1,
+                    python_version=platform.python_version(),
+                    system=platform.system(),
+                    wcwidth_version=wcwidth.__version__,
+                    cps_summary=cps_tracker.summary(),
+                    test_results={},
+                    terminal_results={},
+                    error=error_msg,
+                )
+                writer(f"ucs-detect: error report saved to "
+                       f"{save_yaml or save_json}\n")
+            return 1
         done_ok()
 
-    writer("\nucs-detect: Interactive terminal detected!")
+    if not silent:
+        writer("\nucs-detect: Interactive terminal detected!")
 
     with cps_tracker.timing(2) as done_ok:
         unicode_width = measure.measure_width(
@@ -121,7 +164,7 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
         if unicode_width is not None:
             done_ok()
     has_unicode = (unicode_width == 2)
-    if not has_unicode:
+    if not has_unicode and not silent:
         writer("\nucs-detect: " + term.bold_red(
             "This terminal does not appear to support"
             " Unicode wide characters."
@@ -143,37 +186,55 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
             ambig_label = "wide (2)"
         else:
             ambig_label = "narrow (1)"
-        writer(f"\nucs-detect: Ambiguous width: {ambig_label}")
+        if not silent:
+            writer(f"\nucs-detect: Ambiguous width: {ambig_label}")
 
     terminal_results = {}
     if _should_run("terminal"):
         if not no_terminal_test or test_only == "terminal":
+            # Resolve 'auto' timeout from measured response times
+            if timeout_query == "auto":
+                resolved_timeout = cps_tracker.auto_timeout(multiplier=1.5, minimum=0.05)
+                if not silent:
+                    writer(f"\nucs-detect: Auto timeout: {resolved_timeout:.3f}s "
+                           f"(max response: {cps_tracker.max_response_time:.3f}s)")
+            else:
+                resolved_timeout = float(timeout_query)
             terminal_results = terminal.do_terminal_detection(
                 all_modes=detect_all_dec_modes,
                 cursor_report_delay_ms=cursor_report_delay_ms,
-                timeout=timeout_query,
+                timeout=resolved_timeout,
                 cps_tracker=cps_tracker,
+                has_unicode=has_unicode or terminal_full_probe,
+                silent=silent,
             )
 
-    if save_yaml:
-        print()
+    if save_yaml or save_json:
+        if not silent:
+            print()
+        auto_name = terminal_results.get("software_name", "").strip()
+        auto_version = terminal_results.get("software_version", "").strip()
+        auto_detected = (auto_name and auto_version and auto_name != auto_version)
+
         if set_software_name:
             terminal_software = set_software_name
-        elif terminal_results.get("software_name", "").strip():
-            default_software = terminal_results["software_name"].strip()
-            terminal_software = input(f'Enter "Terminal Software" (press return for "{default_software}"): ')
+        elif silent or not verify_software_name_and_version:
+            terminal_software = auto_name
+        elif auto_name:
+            terminal_software = input(f'Enter "Terminal Software" (press return for "{auto_name}"): ')
             if not terminal_software.strip():
-                terminal_software = default_software
+                terminal_software = auto_name
         else:
             terminal_software = input('Enter "Terminal Software": ')
 
         if set_software_version:
             terminal_version = set_software_version
-        elif terminal_results.get("software_version", "").strip():
-            default_software_version = terminal_results["software_version"].strip()
-            terminal_version = input(f'Enter "Software Version" (press return for "{default_software_version}"): ')
+        elif silent or not verify_software_name_and_version:
+            terminal_version = auto_version
+        elif auto_version:
+            terminal_version = input(f'Enter "Software Version" (press return for "{auto_version}"): ')
             if not terminal_version.strip():
-                terminal_version = default_software_version
+                terminal_version = auto_version
         else:
             terminal_version = input('Enter "Software Version": ')
 
@@ -193,9 +254,12 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
             stop_at_error=error_matcher,
             cursor_report_delay_ms=cursor_report_delay_ms,
             cps_tracker=cps_tracker,
+            silent=silent,
+            bg_rgb=bg_rgb,
         )
 
-        with term.cbreak():
+        cursor_ctx = term.hidden_cursor() if silent else contextlib.nullcontext()
+        with term.cbreak(), cursor_ctx:
 
             if _should_run("unicode", "wide"):
                 wide_results = measure.test_support(
@@ -250,36 +314,39 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
                     limit_graphemes_pct=limit_graphemes_pct,
                     cps_tracker=cps_tracker,
                     cursor_report_delay_ms=cursor_report_delay_ms,
+                    silent=silent,
+                    bg_rgb=bg_rgb,
                 )
 
     elapsed = time.monotonic() - start_time
 
     # prefer user-entered software name/version over automatic detection
-    if save_yaml:
+    if save_yaml or save_json:
         if terminal_software:
             terminal_results['software_name'] = terminal_software
         if terminal_version:
             terminal_results['software_version'] = terminal_version
 
-    display_results(
-        term, writer, ambig_label,
-        terminal_results=terminal_results,
-        wide_results=wide_results,
-        emoji_zwj_results=emoji_zwj_results,
-        emoji_vs16_results=emoji_vs16_results,
-        emoji_vs15_results=emoji_vs15_results,
-        language_results=language_results,
-        elapsed=elapsed,
-        has_unicode=has_unicode,
-    )
+    if not no_final_summary:
+        if silent:
+            writer(f'\r{term.clear_eos}')
 
-    if save_yaml:
-        if (sys.version_info.major, sys.version_info.minor) > (3, 10):
-            date_now = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
-        else:
-            date_now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        do_save_yaml(
-            save_yaml,
+        display_results(
+            term, writer, ambig_label,
+            terminal_results=terminal_results,
+            wide_results=wide_results,
+            emoji_zwj_results=emoji_zwj_results,
+            emoji_vs16_results=emoji_vs16_results,
+            emoji_vs15_results=emoji_vs15_results,
+            language_results=language_results,
+            elapsed=elapsed,
+            has_unicode=has_unicode,
+            silent=silent,
+        )
+
+    if save_yaml or save_json:
+        _save_results(
+            save_yaml, save_json,
             session_arguments=session_arguments,
             software_name=terminal_software,
             software_version=terminal_version,
@@ -289,8 +356,8 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
             ambiguous_width=ambiguous_width,
             python_version=platform.python_version(),
             system=platform.system(),
-            datetime=date_now,
             wcwidth_version=wcwidth.__version__,
+            cps_summary=cps_tracker.summary(),
             test_results=dict(
                 unicode_wide_results=wide_results,
                 emoji_zwj_results=emoji_zwj_results,
@@ -321,25 +388,6 @@ def _pct_style(term, pct_val):
 def color_pct(term, pct_val):
     """Apply color to a percentage value based on success thresholds."""
     return _pct_style(term, pct_val)(f"{pct_val:0.1f} %")
-
-
-def _use_color_table(term):
-    """Return True if terminal supports enough colors for ColorTable."""
-    return term.does_styling and term.number_of_colors >= 16
-
-
-def _make_table(term):
-    """Create a ColorTable with cyan theme, or plain PrettyTable for basic terminals."""
-    if _use_color_table(term):
-        from prettytable.colortable import ColorTable, Theme
-        return ColorTable(theme=Theme(
-            default_color=term.cyan,
-            vertical_color="",
-            horizontal_color="",
-            junction_color="",
-        ))
-    from prettytable import PrettyTable
-    return PrettyTable()
 
 
 def _set_double_border(table, has_unicode=True):
@@ -396,11 +444,11 @@ def _build_terminal_kv_pairs(term, results):
 
     if results.get('pixels_width') and results.get('pixels_height'):
         pairs.append(("Size (pixels)",
-                       f"{results['pixels_width']} x {results['pixels_height']}"))
+                      f"{results['pixels_width']} x {results['pixels_height']}"))
 
     if results.get('cell_width') and results.get('cell_height'):
         pairs.append(("Cell Size (pixels)",
-                       f"{results['cell_width']} x {results['cell_height']}"))
+                      f"{results['cell_width']} x {results['cell_height']}"))
 
     if ratio_info := results.get('screen_ratio'):
         if ratio_name := results.get('screen_ratio_name'):
@@ -414,13 +462,13 @@ def _build_terminal_kv_pairs(term, results):
         r8, g8, b8 = (fg[0] >> 8, fg[1] >> 8, fg[2] >> 8)
         swatch = term.color_rgb(r8, g8, b8)('█')
         pairs.append(("Foreground",
-                       f"#{r8:02x}{g8:02x}{b8:02x} [{swatch}]"))
+                      f"#{r8:02x}{g8:02x}{b8:02x} [{swatch}]"))
 
     if bg := results.get('background_color_rgb'):
         r8, g8, b8 = (bg[0] >> 8, bg[1] >> 8, bg[2] >> 8)
         swatch = term.color_rgb(r8, g8, b8)('█')
         pairs.append(("Background",
-                       f"#{r8:02x}{g8:02x}{b8:02x} [{swatch}]"))
+                      f"#{r8:02x}{g8:02x}{b8:02x} [{swatch}]"))
 
     has_kitty_gfx = results.get('kitty_graphics', False)
     has_iterm2_gfx = results.get('iterm2_features') or {}.get('supported', False)
@@ -477,7 +525,7 @@ def _build_capabilities_kv_pairs(term, results):
             if mode_key in modes:
                 m = modes[mode_key]
                 pairs.append((mode_label,
-                               _color_yes_no(term, m.get('supported'))))
+                              _color_yes_no(term, m.get('supported'))))
             else:
                 pairs.append((mode_label, term.yellow("N/A")))
 
@@ -490,7 +538,7 @@ def _build_capabilities_kv_pairs(term, results):
     if iterm2.get('supported'):
         features = iterm2.get('features', {})
         pairs.append(("iTerm2 Features?",
-                       _color_yes_no(term, True, f" ({len(features)})")))
+                      _color_yes_no(term, True, f" ({len(features)})")))
     elif 'iterm2_features' in results:
         pairs.append(("iTerm2 Features?", _color_yes_no(term, False)))
 
@@ -517,7 +565,7 @@ def _build_capabilities_kv_pairs(term, results):
 
     if 'kitty_clipboard_protocol' in results:
         pairs.append(("Kitty Clipboard?",
-                       _color_yes_no(term, results['kitty_clipboard_protocol'])))
+                      _color_yes_no(term, results['kitty_clipboard_protocol'])))
 
     pointer = results.get('kitty_pointer_shapes')
     if isinstance(pointer, dict) and pointer.get('supported'):
@@ -533,10 +581,8 @@ def _build_capabilities_kv_pairs(term, results):
     return pairs
 
 
-
 def _build_test_kv_pairs(term, ambig_label, **result_sets):
     """Build (key, value) tuples from test results."""
-    has_unicode = result_sets.get("has_unicode", True)
     pairs = []
 
     wide = result_sets.get("wide_results", {})
@@ -556,7 +602,7 @@ def _build_test_kv_pairs(term, ambig_label, **result_sets):
     langs = result_sets.get("language_results")
     if langs:
         n_langs = len(langs)
-        n_pass = sum(1 for l in langs if langs[l]["pct_success"] == 100.0)
+        n_pass = sum(1 for _lang in langs if langs[_lang]["pct_success"] == 100.0)
         lang_pct = n_pass / n_langs * 100 if n_langs else 0
         lang_val = color_pct(term, lang_pct)
         first_lang = next(iter(langs.values()), {})
@@ -571,17 +617,16 @@ def _build_test_kv_pairs(term, ambig_label, **result_sets):
     mode_2027 = modes.get(2027, modes.get("2027"))
     if mode_2027 is not None:
         gc_value = _color_yes_no(term, mode_2027.get('supported'))
-        pairs.insert(1, ("Mode 2027 (graphemes)", gc_value))
+        pairs.insert(1, ("Graphemes(2027)", gc_value))
     elif modes:
-        pairs.insert(1, ("Mode 2027 (graphemes)", term.yellow("N/A")))
-
+        pairs.insert(1, ("Graphemes(2027)", term.yellow("N/A")))
 
     return pairs
 
 
 def _make_kv_table(term, title, pairs, has_unicode=True):
     """Build a table from (key, value) tuples."""
-    table = _make_table(term)
+    table = prettytable.PrettyTable()
     _set_double_border(table, has_unicode)
     table.title = term.magenta(title)
     table.field_names = ["Attribute", "Value"]
@@ -606,7 +651,10 @@ def _truncate_value(val_str, max_len=25):
 
 def make_xtgettcap_lines(term, capabilities, has_unicode=True):
     """Build multi-column XTGETTCAP output lines that tile to fit terminal width."""
+    # std imports
     import math
+
+    # local
     from ucs_detect.table_xtgettcap import XTGETTCAP_CAPABILITIES
 
     cap_info = {name: desc for name, desc in XTGETTCAP_CAPABILITIES}
@@ -617,7 +665,7 @@ def make_xtgettcap_lines(term, capabilities, has_unicode=True):
         return []
 
     # build one full table to get consistent column widths
-    full_table = _make_table(term)
+    full_table = prettytable.PrettyTable()
     _set_double_border(full_table, has_unicode)
     full_table.title = term.magenta(f"XTGETTCAP ({n_caps} capabilities)")
     full_table.field_names = [
@@ -698,7 +746,7 @@ def make_xtgettcap_lines(term, capabilities, has_unicode=True):
 
 def _make_one_language_table(term, title, failed_langs, results, has_unicode):
     """Build a single language table from a list of failed language names."""
-    table = _make_table(term)
+    table = prettytable.PrettyTable()
     _set_double_border(table, has_unicode)
     table.title = term.magenta(title)
     table.field_names = [
@@ -724,6 +772,7 @@ def _make_one_language_table(term, title, failed_langs, results, has_unicode):
 
 def make_language_tables(term, results, has_unicode=True):
     """Build language table string(s), splitting into columns when >12 failures."""
+    # std imports
     import math
     success_langs = [
         lang for lang in results if results[lang]["pct_success"] == 100.0
@@ -760,7 +809,6 @@ def make_language_tables(term, results, has_unicode=True):
         tbl.max_table_width = max_w
         table_strings.append(str(tbl))
     return table_strings
-
 
 
 def _collect_side_by_side_lines(term, table_strings):
@@ -809,9 +857,10 @@ def _write_line(term, writer, line):
         writer("\n")
 
 
-def _paginated_write(term, writer, all_lines):
+def _paginated_write(term, writer, all_lines, skip_initial_newline=False):
     """Write lines to terminal."""
-    writer("\n")
+    if not skip_initial_newline:
+        writer("\n")
     if not term.does_styling or not term.height:
         for line in all_lines:
             writer(line + "\n")
@@ -821,7 +870,7 @@ def _paginated_write(term, writer, all_lines):
 
 
 def display_results(term, writer, ambig_label, terminal_results=None,
-                    elapsed=None, has_unicode=True, **result_sets):
+                    elapsed=None, has_unicode=True, silent=False, **result_sets):
     """Display all test results as prettytable key-value tables."""
     result_sets["elapsed"] = elapsed
     result_sets["has_unicode"] = has_unicode
@@ -838,22 +887,11 @@ def display_results(term, writer, ambig_label, terminal_results=None,
         all_lines.extend(make_xtgettcap_lines(term, xtgettcap, has_unicode))
         all_lines.append("")
 
-    maxwidth = max(40, term.width - 1) // 2
-
-    # primary table: terminal info + unicode tests, with a capability count
+    # primary table: terminal info + unicode tests
     primary_pairs = []
     if terminal_pairs:
         primary_pairs.extend(terminal_pairs)
-    if caps_pairs:
-        n_yes = sum(1 for _, v in caps_pairs if 'Yes' in v)
-        n_total = len(caps_pairs)
-        pct = (n_yes / n_total * 100) if n_total else 0
-        colored = _pct_style(term, pct)(f"{n_yes} of {n_total}")
-        cap_summary = term.link('#capabilities', colored)
-        primary_pairs.append(("Capabilities", cap_summary))
     if test_pairs:
-        primary_pairs.append((None, wcwidth.center(
-            term.magenta("Unicode"), maxwidth, '-')))
         primary_pairs.extend(test_pairs)
 
     # secondary table: detailed capabilities
@@ -875,14 +913,23 @@ def display_results(term, writer, ambig_label, terminal_results=None,
 
     langs = result_sets.get("language_results")
     if langs:
-        failed = [l for l in langs if langs[l]["pct_success"] < 100.0]
+        failed = [_lang for _lang in langs if langs[_lang]["pct_success"] < 100.0]
         if failed:
             lang_table_strings = make_language_tables(term, langs, has_unicode)
             all_lines.extend(
                 _collect_side_by_side_lines(term, lang_table_strings))
 
-    _paginated_write(term, writer, all_lines)
+    _paginated_write(term, writer, all_lines, skip_initial_newline=silent)
     writer(term.normal)
+
+
+def _save_results(save_yaml, save_json, **kwargs):
+    """Save results to yaml and/or json, adding a UTC timestamp."""
+    kwargs['datetime'] = _utcnow_str()
+    if save_yaml:
+        do_save_yaml(save_yaml, **kwargs)
+    if save_json:
+        do_save_json(save_json, **kwargs)
 
 
 def do_save_yaml(save_yaml, **kwargs):
@@ -897,6 +944,14 @@ def do_save_yaml(save_yaml, **kwargs):
             allow_unicode=True,
             default_flow_style=False,
         )
+
+
+def do_save_json(save_json, **kwargs):
+    if 'software_version' in kwargs:
+        kwargs['software_version'] = str(kwargs['software_version'])
+    with open(save_json, "w", encoding='utf-8') as fout:
+        json.dump(kwargs, fout, sort_keys=True, indent=2, ensure_ascii=False)
+        fout.write('\n')
 
 
 def parse_args():
@@ -963,6 +1018,11 @@ def parse_args():
         help="Save test results to given filepath as yaml, will prompt for software name & version",
     )
     args.add_argument(
+        "--save-json",
+        default=None,
+        help="Save test results to given filepath as json, will prompt for software name & version",
+    )
+    args.add_argument(
         "--no-terminal-test",
         action="store_true",
         default=False,
@@ -982,9 +1042,9 @@ def parse_args():
     )
     args.add_argument(
         "--timeout-query",
-        type=float,
-        default=0.2,
-        help="Timeout in seconds for terminal capability queries",
+        default="auto",
+        help="Timeout in seconds for terminal capability queries, or 'auto' to "
+             "scale from measured response times (default: auto)",
     )
     args.add_argument(
         "--stop-at-error",
@@ -1024,16 +1084,46 @@ def parse_args():
         help="Set software version for YAML output (skips interactive prompt)"
     )
     args.add_argument(
+        "--verify-software-name-and-version",
+        action="store_true",
+        default=False,
+        help="Prompt for confirmation even when terminal auto-detects name and version"
+    )
+    args.add_argument(
+        "--terminal-full-probe",
+        action="store_true",
+        default=False,
+        help="Probe all terminal features even when basic Unicode or device attributes unsupported"
+    )
+    args.add_argument(
         "--rerun",
         default=None,
         metavar="YAML_FILE",
         help="Re-run ucs-detect using arguments from a saved YAML file"
+    )
+    args.add_argument(
+        "--probe-silently",
+        dest="silent",
+        action="store_true",
+        default=False,
+        help="Hide progress: invisible test characters, hidden cursor, overwrites same line"
+    )
+    args.add_argument(
+        "--no-final-summary",
+        dest="no_final_summary",
+        action="store_true",
+        default=False,
+        help="Do not display the final results summary table"
     )
     results = vars(args.parse_args())
     if results["rerun"]:
         results = _apply_rerun_yaml(results)
     if results["save_yaml"]:
         results["save_yaml"] = os.path.expanduser(results["save_yaml"])
+    if results["save_json"]:
+        results["save_json"] = os.path.expanduser(results["save_json"])
+    if results.get("silent") and results.get("stop_at_error"):
+        args.error("--probe-silently and --stop-at-error are mutually exclusive")
     return results
 
 
