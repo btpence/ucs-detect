@@ -88,6 +88,12 @@ Notable CLI options:
   ``all``, ``zwj``, ``wide``, ``vs16``, ``vs16n``, ``vs15``, ``lang``, or a
   specific language name (e.g., ``Hindi``).
 
+``--silent``
+  Minimal output, modifying only a single line.
+
+``--save-json <path>``
+  Save results as a JSON report.
+
 ``--no-terminal-test``
   Skip terminal feature detection.
 
@@ -220,7 +226,9 @@ marks across diverse scripts.
 History
 -------
 
-- 2.0.1 (2026-02-01): Update iTerm2 image feature detection.
+- 2.0.1 (2026-02-05): Add ``--silent`` mode, ``--save-json``, time measurements with RTT and
+  ping-like statistics, and telnetlib3 shell support for testing over telnet. Bugfix iTerm2 image
+  feature detection.
 
 - 2.0.0 (2026-02-01):  More correct results with up-to-date wcwidth_, loads of new CLI options like
   ``--rerun``, ``--limit-category-time`` and remove CLI arguments ``--unicode-version``,
