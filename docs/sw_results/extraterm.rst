@@ -29,7 +29,7 @@ Detailed breakdown of how scores are calculated for *Extraterm*:
      5  :ref:`VS15 <extratermvs15>`              0.00%        0.0%
      6  :ref:`Capabilities <extratermdecmodes>`  0.00%        0.0%
      7  :ref:`Graphics <extratermgraphics>`      0%           0.0%
-     8  :ref:`TIME <extratermtime>`              435.26s      34.8%
+     8  :ref:`TIME <extratermtime>`              435.26s      27.1%
    ===  =======================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 38.26%
+- Raw Final Score: 37.76%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -126,7 +126,7 @@ Test execution time:
 - Elapsed time: 435.26 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 34.8%
+- Scaled result: 27.1%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -246,7 +246,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*Extraterm* does not report support for any graphics protocols.
+*Extraterm* supports the following graphics protocols: `iTerm2 inline images`_.
 
 **Detection Methods:**
 

@@ -29,7 +29,7 @@ Detailed breakdown of how scores are calculated for *tmux*:
      5  :ref:`VS15 <tmuxvs15>`              0.00%        0.0%
      6  :ref:`Capabilities <tmuxdecmodes>`  0.00%        0.0%
      7  :ref:`Graphics <tmuxgraphics>`      50%          50.0%
-     8  :ref:`TIME <tmuxtime>`              10.40s       91.1%
+     8  :ref:`TIME <tmuxtime>`              10.40s       90.0%
    ===  ==================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 62.82%
+- Raw Final Score: 62.75%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +54,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 44.8%
+- Final Scaled Score: 45.3%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -126,7 +126,7 @@ Test execution time:
 - Elapsed time: 10.40 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 91.1%
+- Scaled result: 90.0%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -270,7 +270,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*tmux* supports the following graphics protocols: Sixel_.
+*tmux* supports the following graphics protocols: Sixel_, `iTerm2 inline images`_.
 
 **Note:** Must be compiled with sixel support. Check support and enablement with command: ``(tmux show-options -g;tmux show-window-options)|grep -i sixel``
 

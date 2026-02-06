@@ -29,7 +29,7 @@ Detailed breakdown of how scores are calculated for *PuTTY*:
      5  :ref:`VS15 <puttyvs15>`              0.00%        0.0%
      6  :ref:`Capabilities <puttydecmodes>`  0.00%        0.0%
      7  :ref:`Graphics <puttygraphics>`      0%           0.0%
-     8  :ref:`TIME <puttytime>`              9.10s        93.1%
+     8  :ref:`TIME <puttytime>`              9.10s        92.3%
    ===  ===================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 39.22%
+- Raw Final Score: 39.16%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +54,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 6.5%
+- Final Scaled Score: 7.2%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -126,7 +126,7 @@ Test execution time:
 - Elapsed time: 9.10 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 93.1%
+- Scaled result: 92.3%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -272,7 +272,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*PuTTY* does not report support for any graphics protocols.
+*PuTTY* supports the following graphics protocols: `iTerm2 inline images`_.
 
 **Detection Methods:**
 

@@ -54,7 +54,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 6.1%
+- Final Scaled Score: 6.9%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -272,7 +272,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*screen* does not report support for any graphics protocols.
+*screen* supports the following graphics protocols: `iTerm2 inline images`_.
 
 **Detection Methods:**
 

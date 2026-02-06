@@ -29,7 +29,7 @@ Detailed breakdown of how scores are calculated for *kitty*:
      5  :ref:`VS15 <kittyvs15>`              100.00%      100.0%
      6  :ref:`Capabilities <kittydecmodes>`  85.71%       85.7%
      7  :ref:`Graphics <kittygraphics>`      100%         100.0%
-     8  :ref:`TIME <kittytime>`              162.33s      49.6%
+     8  :ref:`TIME <kittytime>`              162.33s      43.7%
    ===  ===================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 92.09%
+- Raw Final Score: 91.70%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +54,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 92.4%
+- Final Scaled Score: 92.0%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -126,7 +126,7 @@ Test execution time:
 - Elapsed time: 162.33 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 49.6%
+- Scaled result: 43.7%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -195,7 +195,7 @@ All codepoint combinations with Variation Selector-15 tested were successful.
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*kitty* supports the following graphics protocols: `Kitty graphics protocol`_.
+*kitty* supports the following graphics protocols: `iTerm2 inline images`_, `Kitty graphics protocol`_.
 
 **Detection Methods:**
 

@@ -29,7 +29,7 @@ Detailed breakdown of how scores are calculated for *foot*:
      5  :ref:`VS15 <footvs15>`              0.00%        0.0%
      6  :ref:`Capabilities <footdecmodes>`  100.00%      100.0%
      7  :ref:`Graphics <footgraphics>`      50%          50.0%
-     8  :ref:`TIME <foottime>`              12.82s       87.9%
+     8  :ref:`TIME <foottime>`              12.82s       86.5%
    ===  ==================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 78.59%
+- Raw Final Score: 78.50%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +54,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 70.4%
+- Final Scaled Score: 70.7%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -126,7 +126,7 @@ Test execution time:
 - Elapsed time: 12.82 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 87.9%
+- Scaled result: 86.5%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -248,7 +248,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*foot* supports the following graphics protocols: Sixel_.
+*foot* supports the following graphics protocols: Sixel_, `iTerm2 inline images`_.
 
 **Detection Methods:**
 

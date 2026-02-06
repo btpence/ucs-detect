@@ -29,7 +29,7 @@ Detailed breakdown of how scores are calculated for *terminator*:
      5  :ref:`VS15 <terminatorvs15>`              0.00%        0.0%
      6  :ref:`Capabilities <terminatordecmodes>`  57.14%       57.1%
      7  :ref:`Graphics <terminatorgraphics>`      0%           0.0%
-     8  :ref:`TIME <terminatortime>`              1509.64s     16.0%
+     8  :ref:`TIME <terminatortime>`              1509.64s     6.2%
    ===  ========================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 41.60%
+- Raw Final Score: 40.95%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +54,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 10.4%
+- Final Scaled Score: 10.1%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -126,7 +126,7 @@ Test execution time:
 - Elapsed time: 1509.64 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 16.0%
+- Scaled result: 6.2%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -272,7 +272,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*terminator* does not report support for any graphics protocols.
+*terminator* supports the following graphics protocols: `iTerm2 inline images`_.
 
 **Detection Methods:**
 

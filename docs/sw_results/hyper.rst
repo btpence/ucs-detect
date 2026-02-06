@@ -28,7 +28,7 @@ Detailed breakdown of how scores are calculated for *Hyper*:
      5  :ref:`VS15 <hypervs15>`              0.00%        0.0%
      6  :ref:`Capabilities <hyperdecmodes>`  0.00%        0.0%
      7  :ref:`Graphics <hypergraphics>`      0%           0.0%
-     8  :ref:`TIME <hypertime>`              466.41s      33.7%
+     8  :ref:`TIME <hypertime>`              466.41s      26.0%
    ===  ===================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -43,7 +43,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 35.22%
+- Raw Final Score: 34.70%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -125,7 +125,7 @@ Test execution time:
 - Elapsed time: 466.41 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 33.7%
+- Scaled result: 26.0%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -271,7 +271,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*Hyper* does not report support for any graphics protocols.
+*Hyper* supports the following graphics protocols: `iTerm2 inline images`_.
 
 **Detection Methods:**
 

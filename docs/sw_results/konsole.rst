@@ -4,7 +4,7 @@ Konsole
 -------
 
 
-Tested Software version 23.08.5 on Linux.
+Tested Software version 25.12.1 on Linux.
 The homepage URL of this terminal is https://apps.kde.org/konsole/.
 Full results available at ucs-detect_ repository path
 `data/konsole.yaml <https://github.com/jquast/ucs-detect/blob/master/data/konsole.yaml>`_.
@@ -22,14 +22,14 @@ Detailed breakdown of how scores are calculated for *Konsole*:
    ===  =====================================  ===========  ====================
      #  Score Type                             Raw Score    Final Scaled Score
    ===  =====================================  ===========  ====================
-     1  :ref:`WIDE <konsolewide>`              99.55%       50.0%
+     1  :ref:`WIDE <konsolewide>`              99.68%       65.2%
      2  :ref:`ZWJ <konsolezwj>`                95.99%       96.0%
      3  :ref:`LANG <konsolelang>`              97.58%       91.9%
      4  :ref:`VS16 <konsolevs16>`              100.00%      100.0%
      5  :ref:`VS15 <konsolevs15>`              0.00%        0.0%
      6  :ref:`Capabilities <konsoledecmodes>`  0.00%        0.0%
      7  :ref:`Graphics <konsolegraphics>`      100%         100.0%
-     8  :ref:`TIME <konsoletime>`              9.28s        92.8%
+     8  :ref:`TIME <konsoletime>`              11.69s       88.0%
    ===  =====================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 71.93%
+- Raw Final Score: 71.64%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -62,10 +62,10 @@ The following plot shows how this terminal's scores compare to all other termina
 
 Wide character support calculation:
 
-- Total successful codepoints: 7233
+- Total successful codepoints: 7243
 - Total codepoints tested: 7266
-- Formula: 7233 / 7266
-- Result: 99.55%
+- Formula: 7243 / 7266
+- Result: 99.68%
 
 **ZWJ Score Details:**
 
@@ -123,10 +123,10 @@ Scoring: 100% for modern (iTerm2/Kitty), 50% for legacy only (Sixel/ReGIS), 0% f
 
 Test execution time:
 
-- Elapsed time: 9.28 seconds
+- Elapsed time: 11.69 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 92.8%
+- Scaled result: 88.0%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -141,26 +141,26 @@ Geometric mean calculation:
 Wide character support
 ++++++++++++++++++++++
 
-Wide character support of *Konsole* is **99.5%** (33 errors of 7266 codepoints tested).
+Wide character support of *Konsole* is **99.7%** (23 errors of 7266 codepoints tested).
 
 Sequence of a WIDE character, from midpoint of alignment failure records:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  =================================================  =============  ==========  =========  ==========================
+   ===  =================================================  =============  ==========  =========  =====================
      #  Codepoint                                          Python         Category      wcwidth  Name
-   ===  =================================================  =============  ==========  =========  ==========================
-     1  `U+0001D316 <https://codepoints.net/U+0001D316>`_  '\\U0001d316'  So                  2  TETRAGRAM FOR HOLDING BACK
-   ===  =================================================  =============  ==========  =========  ==========================
+   ===  =================================================  =============  ==========  =========  =====================
+     1  `U+0001D334 <https://codepoints.net/U+0001D334>`_  '\\U0001d334'  So                  2  TETRAGRAM FOR PATTERN
+   ===  =================================================  =============  ==========  =========  =====================
 
 Total codepoints: 1
 
 
 - Shell test using `printf(1)`_, ``'|'`` should align in output::
 
-        $ printf "\xf0\x9d\x8c\x96|\\n12|\\n"
-        𝌖|
+        $ printf "\xf0\x9d\x8c\xb4|\\n12|\\n"
+        𝌴|
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
@@ -248,7 +248,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*Konsole* supports the following graphics protocols: Sixel_, `Kitty graphics protocol`_.
+*Konsole* supports the following graphics protocols: Sixel_, `iTerm2 inline images`_, `Kitty graphics protocol`_.
 
 **Detection Methods:**
 
@@ -980,7 +980,7 @@ with the following commands::
 Test Execution Time
 +++++++++++++++++++
 
-The test suite completed in **9.28 seconds** (9s).
+The test suite completed in **11.69 seconds** (11s).
 
 This time measurement represents the total duration of the test execution,
 including all Unicode wide character tests, emoji ZWJ sequences, variation

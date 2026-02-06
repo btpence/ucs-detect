@@ -29,7 +29,7 @@ Detailed breakdown of how scores are calculated for *xfce4-terminal*:
      5  :ref:`VS15 <xfce4terminalvs15>`              0.00%        0.0%
      6  :ref:`Capabilities <xfce4terminaldecmodes>`  57.14%       57.1%
      7  :ref:`Graphics <xfce4terminalgraphics>`      0%           0.0%
-     8  :ref:`TIME <xfce4terminaltime>`              343.74s      38.3%
+     8  :ref:`TIME <xfce4terminaltime>`              343.74s      31.1%
    ===  ===========================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 43.19%
+- Raw Final Score: 42.71%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -126,7 +126,7 @@ Test execution time:
 - Elapsed time: 343.74 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 38.3%
+- Scaled result: 31.1%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -272,7 +272,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*xfce4-terminal* does not report support for any graphics protocols.
+*xfce4-terminal* supports the following graphics protocols: `iTerm2 inline images`_.
 
 **Detection Methods:**
 

@@ -29,7 +29,7 @@ Detailed breakdown of how scores are calculated for *mlterm*:
      5  :ref:`VS15 <mltermvs15>`              0.00%        0.0%
      6  :ref:`Capabilities <mltermdecmodes>`  57.14%       57.1%
      7  :ref:`Graphics <mltermgraphics>`      50%          50.0%
-     8  :ref:`TIME <mltermtime>`              8.37s        94.3%
+     8  :ref:`TIME <mltermtime>`              8.37s        93.7%
    ===  ====================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 52.47%
+- Raw Final Score: 52.42%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +54,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 28.0%
+- Final Scaled Score: 28.6%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -126,7 +126,7 @@ Test execution time:
 - Elapsed time: 8.37 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 94.3%
+- Scaled result: 93.7%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -269,7 +269,7 @@ Total codepoints: 2
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*mlterm* supports the following graphics protocols: Sixel_, ReGIS_.
+*mlterm* supports the following graphics protocols: Sixel_, ReGIS_, `iTerm2 inline images`_.
 
 **Detection Methods:**
 
