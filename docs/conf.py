@@ -7,7 +7,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "ucs-detect"
-copyright = "2023, Jeff Quast"
+
+copyright = f"2023-{datetime.datetime.now().year}, Jeff Quast"
 author = "Jeff Quast"
 release = "1.0.7"
 
