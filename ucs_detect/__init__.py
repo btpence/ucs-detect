@@ -531,7 +531,7 @@ def _build_capabilities_kv_pairs(term, results):
 
     if results.get('kitty_keyboard') is not None:
         pairs.append(("Kitty Keyboard?", _color_yes_no(term, True)))
-    elif results.get('modes'):
+    else:
         pairs.append(("Kitty Keyboard?", _color_yes_no(term, False)))
 
     iterm2 = results.get('iterm2_features') or {}
@@ -539,7 +539,7 @@ def _build_capabilities_kv_pairs(term, results):
         features = iterm2.get('features', {})
         pairs.append(("iTerm2 Features?",
                       _color_yes_no(term, True, f" ({len(features)})")))
-    elif 'iterm2_features' in results:
+    else:
         pairs.append(("iTerm2 Features?", _color_yes_no(term, False)))
 
     ts = results.get('text_sizing', {})
@@ -550,22 +550,24 @@ def _build_capabilities_kv_pairs(term, results):
         if ts.get('scale'):
             parts.append('scale')
         pairs.append(("Kitty Text Sizing?", term.green2('+'.join(parts))))
-    elif 'text_sizing' in results:
+    else:
         pairs.append(("Kitty Text Sizing?", _color_yes_no(term, False)))
 
     xtgettcap = results.get('xtgettcap', {})
-    if not xtgettcap.get('supported') and 'xtgettcap' in results:
+    if xtgettcap.get('supported'):
+        pairs.append(("XTGETTCAP?", _color_yes_no(term, True)))
+    else:
         pairs.append(("XTGETTCAP?", _color_yes_no(term, False)))
 
     notif = results.get('kitty_notifications')
     if isinstance(notif, dict) and notif.get('supported'):
         pairs.append(("Kitty Notifications?", _color_yes_no(term, True)))
-    elif 'kitty_notifications' in results:
+    else:
         pairs.append(("Kitty Notifications?", _color_yes_no(term, False)))
 
-    if 'kitty_clipboard_protocol' in results:
-        pairs.append(("Kitty Clipboard?",
-                      _color_yes_no(term, results['kitty_clipboard_protocol'])))
+    pairs.append(("Kitty Clipboard?",
+                  _color_yes_no(term, results.get('kitty_clipboard_protocol',
+                                                  False))))
 
     pointer = results.get('kitty_pointer_shapes')
     if isinstance(pointer, dict) and pointer.get('supported'):
@@ -574,7 +576,7 @@ def _build_capabilities_kv_pairs(term, results):
         if current:
             label += f" ({current})"
         pairs.append(("Kitty Pointer Shapes?", label))
-    elif 'kitty_pointer_shapes' in results:
+    else:
         pairs.append(("Kitty Pointer Shapes?", _color_yes_no(term, False)))
 
     pairs.sort(key=lambda p: p[0].lower())

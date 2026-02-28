@@ -319,177 +319,31 @@ def echo(term, data):
     term.stream.flush()
 
 
-def _hex_encode(name):
-    """Hex-encode a capability name for XTGETTCAP."""
-    return name.encode('ascii').hex()
-
-
-def _hex_decode(hex_str):
-    """Decode a hex-encoded string from an XTGETTCAP response."""
-    try:
-        return bytes.fromhex(hex_str).decode('ascii', errors='replace')
-    except (ValueError, UnicodeDecodeError):
-        return hex_str
-
-
-def _parse_xtgettcap_responses(raw, result):
-    """Parse DCS+r responses from XTGETTCAP into *result* dict."""
-    for match in re.finditer(
-        r'\x1bP([01])\+r([0-9a-fA-F]+)(?:=([0-9a-fA-F]*))?\x1b\\', raw
-    ):
-        success = match.group(1) == '1'
-        cap_hex = match.group(2)
-        val_hex = match.group(3)
-
-        cap_name = _hex_decode(cap_hex)
-        if success and val_hex is not None:
-            result['xtgettcap']['capabilities'][cap_name] = _hex_decode(val_hex)
-        elif success:
-            result['xtgettcap']['capabilities'][cap_name] = True
-
-
-def maybe_determine_xtgettcap(term, timeout=1.0, cursor_report_delay_ms=0):
-    """
-    Query terminal capabilities via XTGETTCAP (DCS+q).
-
-    Probes with a single capability first to avoid flooding the screen with garbage on terminals
-    that do not support XTGETTCAP (e.g. PuTTY renders the raw DCS sequence as visible text).
-    """
-    # local
-    from ucs_detect.table_xtgettcap import XTGETTCAP_CAPABILITIES
-
+def maybe_determine_xtgettcap(term, timeout=1.0, **_kw):
+    """Query terminal capabilities via XTGETTCAP (DCS+q), delegating to blessed."""
     result = {'xtgettcap': {'supported': False, 'capabilities': {}}}
-
-    # Probe with the first capability only.
-    probe_cap = XTGETTCAP_CAPABILITIES[0][0]
-    echo(term, f'\x1bP+q{_hex_encode(probe_cap)}\x1b\\')
-
-    if cursor_report_delay_ms:
-        time.sleep(cursor_report_delay_ms / 1000.0)
-    probe_raw = term.flushinp(timeout=timeout)
-
-    if not probe_raw or not re.search(r'\x1bP[01]\+r', probe_raw):
-        # Not supported -- erase any visible garbage the terminal may
-        # have rendered from the unrecognised DCS sequence.
-        echo(term, f'\r{term.clear_eol}')
-        return result
-
-    result['xtgettcap']['supported'] = True
-    _parse_xtgettcap_responses(probe_raw, result)
-
-    # Probe succeeded -- query remaining capabilities.
-    for capname, _desc in XTGETTCAP_CAPABILITIES[1:]:
-        echo(term, f'\x1bP+q{_hex_encode(capname)}\x1b\\')
-
-    if cursor_report_delay_ms:
-        time.sleep(cursor_report_delay_ms / 1000.0)
-    raw = term.flushinp(timeout=timeout)
-    if raw:
-        _parse_xtgettcap_responses(raw, result)
-
+    tc = term.get_xtgettcap(timeout=timeout)
+    if tc is not None and tc.supported:
+        result['xtgettcap']['supported'] = True
+        result['xtgettcap']['capabilities'] = dict(tc.capabilities)
     return result
 
 
-def maybe_determine_kitty_graphics(term, timeout=1.0, cursor_report_delay_ms=0):
-    """Detect Kitty graphics protocol support."""
-    echo(term, '\x1b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\')
-    if cursor_report_delay_ms:
-        time.sleep(cursor_report_delay_ms / 1000.0)
-    raw = term.flushinp(timeout=timeout)
-    supported = raw is not None and 'OK' in raw
-    return {'kitty_graphics': supported}
+def maybe_determine_kitty_graphics(term, timeout=1.0, **_kw):
+    """Detect Kitty graphics protocol support, delegating to blessed."""
+    return {'kitty_graphics': term.does_kitty_graphics(timeout=timeout)}
 
 
-def _probe_iterm2_cell_size(term, timeout=1.0, cursor_report_delay_ms=0):
-    """
-    Probe for iTerm2 image support via OSC 1337;ReportCellSize.
-
-    Terminals that support the iTerm2 inline image protocol generally respond to this query, even if
-    they don't implement the Capabilities query. A response indicates iTerm2 image protocol support.
-    """
-    echo(term, '\x1b]1337;ReportCellSize\x07')
-    if cursor_report_delay_ms:
-        time.sleep(cursor_report_delay_ms / 1000.0)
-    raw = term.flushinp(timeout=timeout)
-    if not raw:
-        return False
-    return bool(re.search(r'\x1b\]1337;ReportCellSize=', raw))
-
-
-def maybe_determine_iterm2_features(term, timeout=1.0, cursor_report_delay_ms=0):
-    """
-    Query iTerm2 feature reporting protocol.
-
-    First attempts the official ``OSC 1337;Capabilities`` query. If that
-    fails, falls back to ``OSC 1337;ReportCellSize`` as a probe — terminals
-    that support the iTerm2 inline image protocol (such as WezTerm) respond
-    to this even without implementing the Capabilities query.
-    """
+def maybe_determine_iterm2_features(term, timeout=1.0, **_kw):
+    """Query iTerm2 feature reporting protocol, delegating to blessed."""
     result = {'iterm2_features': {'supported': False, 'features': {}}}
-    echo(term, '\x1b]1337;Capabilities\x07')
-    if cursor_report_delay_ms:
-        time.sleep(cursor_report_delay_ms / 1000.0)
-    raw = term.flushinp(timeout=timeout)
-
-    if raw:
-        match = re.search(r'\x1b\]1337;Capabilities=([^\x07\x1b]+)', raw)
-        if match:
-            result['iterm2_features']['supported'] = True
-            _parse_iterm2_capabilities(result, match.group(1))
-            return result
-
-    # fallback: probe ReportCellSize for iTerm2 image protocol support
-    if _probe_iterm2_cell_size(term, timeout, cursor_report_delay_ms):
+    cap = term.get_iterm2_capabilities(timeout=timeout)
+    if cap is not None and cap.supported:
         result['iterm2_features']['supported'] = True
-        result['iterm2_features']['detection'] = 'ReportCellSize'
-
+        result['iterm2_features']['features'] = dict(cap.features)
+        if cap.detection != 'Capabilities':
+            result['iterm2_features']['detection'] = cap.detection
     return result
-
-
-def _parse_iterm2_capabilities(result, feature_str):
-    """Parse iTerm2 Capabilities feature string into result dict."""
-    FEATURE_MAP = {
-        'T': ('24BIT', 'int', 2),
-        'Cw': ('CLIPBOARD_WRITABLE', 'bool', 0),
-        'Lr': ('DECSLRM', 'bool', 0),
-        'M': ('MOUSE', 'bool', 0),
-        'Sc': ('DECSCUSR', 'int', 3),
-        'U': ('UNICODE_BASIC', 'bool', 0),
-        'Aw': ('AMBIGUOUS_WIDE', 'bool', 0),
-        'Uw': ('UNICODE_WIDTHS', 'int', 6),
-        'Ts': ('TITLES', 'int', 2),
-        'B': ('BRACKETED_PASTE', 'bool', 0),
-        'F': ('FOCUS_REPORTING', 'bool', 0),
-        'Gs': ('STRIKETHROUGH', 'bool', 0),
-        'Go': ('OVERLINE', 'bool', 0),
-        'Sy': ('SYNC', 'bool', 0),
-        'H': ('HYPERLINKS', 'bool', 0),
-        'No': ('NOTIFICATIONS', 'bool', 0),
-        'Sx': ('SIXEL', 'bool', 0),
-    }
-
-    pos = 0
-    while pos < len(feature_str):
-        matched = False
-        for code_len in (2, 1):
-            code = feature_str[pos:pos + code_len]
-            if code in FEATURE_MAP:
-                name, ftype, bits = FEATURE_MAP[code]
-                pos += code_len
-                if ftype == 'int' and bits > 0:
-                    digits = ''
-                    while pos < len(feature_str) and feature_str[pos].isdigit():
-                        digits += feature_str[pos]
-                        pos += 1
-                    result['iterm2_features']['features'][name] = (
-                        int(digits) if digits else 0
-                    )
-                else:
-                    result['iterm2_features']['features'][name] = True
-                matched = True
-                break
-        if not matched:
-            pos += 1
 
 
 def maybe_determine_text_sizing(term, timeout=1.0):
@@ -545,63 +399,37 @@ def maybe_determine_tab_stop_width(term, timeout=1.0):
     return {'tab_stop_width': col1 - col0}
 
 
-def maybe_determine_kitty_notifications(term, timeout=1.0, cursor_report_delay_ms=0):
-    """Detect Kitty desktop notifications (OSC 99) support."""
-    echo(term, '\x1b]99;i=ucsdetect:p=?\x1b\\\x1b[c')
-    if cursor_report_delay_ms:
-        time.sleep(cursor_report_delay_ms / 1000.0)
-    raw = term.flushinp(timeout=timeout)
-    if not raw:
-        return {'kitty_notifications': False}
-
-    match = re.search(r'\x1b\]99;([^\x07\x1b]*?)[\x07\x1b]', raw)
-    if match:
-        params_str = match.group(1)
-        result = {'kitty_notifications': {'supported': True}}
-        for param in params_str.split(':'):
-            if '=' in param:
-                key, val = param.split('=', 1)
-                if key == 'p':
-                    result['kitty_notifications']['payload_types'] = val
-                elif key == 'a':
-                    result['kitty_notifications']['actions'] = val
-        return result
-
+def maybe_determine_kitty_notifications(term, timeout=1.0, **_kw):
+    """Detect Kitty desktop notifications (OSC 99) support, delegating to blessed."""
+    if term.does_kitty_notifications(timeout=timeout):
+        return {'kitty_notifications': {'supported': True}}
     return {'kitty_notifications': False}
 
 
-def maybe_determine_kitty_clipboard(term, timeout=1.0, cursor_report_delay_ms=0):
-    """Detect Kitty clipboard protocol via DECRQM for mode 5522."""
-    echo(term, '\x1b[?5522$p')
-    if cursor_report_delay_ms:
-        time.sleep(cursor_report_delay_ms / 1000.0)
-    raw = term.flushinp(timeout=timeout)
-    if not raw:
-        return {'kitty_clipboard_protocol': False}
+_RE_KITTY_CLIPBOARD = re.compile(r'\x1b\[\?5522;(\d+)\$y')
 
-    match = re.search(r'\x1b\[\?5522;(\d+)\$y', raw)
+
+def maybe_determine_kitty_clipboard(term, timeout=1.0, **_kw):
+    """Detect Kitty clipboard protocol via DECRQM for mode 5522."""
+    match = term._query_response('\x1b[?5522$p', _RE_KITTY_CLIPBOARD, timeout)
     if match:
         ps = int(match.group(1))
         if ps not in (0, 4):
             return {'kitty_clipboard_protocol': True}
-
     return {'kitty_clipboard_protocol': False}
 
 
-def maybe_determine_kitty_pointer_shapes(term, timeout=1.0, cursor_report_delay_ms=0):
-    """Detect Kitty mouse pointer shapes (OSC 22) support."""
-    echo(term, '\x1b]22;?__current__\x1b\\')
-    if cursor_report_delay_ms:
-        time.sleep(cursor_report_delay_ms / 1000.0)
-    raw = term.flushinp(timeout=timeout)
-    if not raw:
-        return {'kitty_pointer_shapes': False}
+_RE_KITTY_POINTER = re.compile(r'\x1b\]22;([^\x07\x1b]+)[\x07\x1b]')
 
-    match = re.search(r'\x1b\]22;([^\x07\x1b]+)[\x07\x1b]', raw)
+
+def maybe_determine_kitty_pointer_shapes(term, timeout=1.0, **_kw):
+    """Detect Kitty mouse pointer shapes (OSC 22) support."""
+    match = term._query_response(
+        '\x1b]22;?__current__\x1b\\', _RE_KITTY_POINTER, timeout
+    )
     if match:
         shape = match.group(1)
         return {'kitty_pointer_shapes': {'supported': True, 'current': shape}}
-
     return {'kitty_pointer_shapes': False}
 
 
@@ -643,23 +471,16 @@ def do_terminal_detection(all_modes=False, cursor_report_delay_ms=0,
             bg = attrs['background_color_rgb']
             bg_rgb = (bg[0] >> 8, bg[1] >> 8, bg[2] >> 8)
 
-    # check device attributes early to determine if terminal is "modern"
+    # probe for "modern" terminal: DA1 and XTVERSION are cheap queries that
+    # modern terminals respond to and retro terminals (linux fbdev, real
+    # VT100, etc.) ignore.  kitty responds to XTVERSION but not DA1.
     with _status(writer, term, "Device Attributes", bg_rgb, silent=silent):
         attrs.update(td(maybe_determine_da_and_sixel, term,
                         timeout=timeout))
-
-    # terminal is "modern" if it supports both unicode and device attributes
-    has_device_attrs = attrs.get('device_attributes') is not None
-    is_modern = has_unicode and has_device_attrs
-
-    if is_modern:
-        attrs.update(maybe_determine_dec_modes(
-            term, writer, all_modes=all_modes, bg_rgb=bg_rgb,
-            timeout=timeout, cps_tracker=cps_tracker, silent=silent))
-
     with _status(writer, term, "Software Version", bg_rgb, silent=silent):
         attrs.update(td(maybe_determine_software, term, writer,
                         timeout=timeout))
+
     with _status(writer, term, "Cell Size", bg_rgb, silent=silent):
         attrs.update(td(maybe_determine_cell_size, term, writer,
                         timeout=timeout))
@@ -668,40 +489,47 @@ def do_terminal_detection(all_modes=False, cursor_report_delay_ms=0,
                         timeout=timeout))
     attrs.update(maybe_determine_screen_ratio(attrs))
 
+    has_device_attrs = attrs.get('device_attributes') is not None
+    has_sw_version = attrs.get('software_name') is not None
+    has_cell_size = attrs.get('cell_height') is not None
+    is_modern = has_unicode and (has_device_attrs or has_sw_version
+                                 or has_cell_size)
+
     if not is_modern:
         return attrs
+
+    attrs.update(maybe_determine_dec_modes(
+        term, writer, all_modes=all_modes, bg_rgb=bg_rgb,
+        timeout=timeout, cps_tracker=cps_tracker, silent=silent))
 
     with _status(writer, term, "Kitty Keyboard", bg_rgb, silent=silent):
         attrs.update(td(maybe_determine_kitty_keyboard, term,
                         timeout=timeout))
 
-    delay_kw = dict(timeout=timeout,
-                    cursor_report_delay_ms=cursor_report_delay_ms)
-    with term.cbreak():
-        with _status(writer, term, "XTGETTCAP", bg_rgb, silent=silent):
-            attrs.update(td(maybe_determine_xtgettcap, term,
-                            **delay_kw))
-        with _status(writer, term, "Kitty Graphics", bg_rgb, silent=silent):
-            attrs.update(td(maybe_determine_kitty_graphics, term,
-                            **delay_kw))
-        with _status(writer, term, "iTerm2 Features", bg_rgb, silent=silent):
-            attrs.update(td(maybe_determine_iterm2_features, term,
-                            **delay_kw))
-        with _status(writer, term, "Text Sizing", bg_rgb, silent=silent):
-            attrs.update(td(maybe_determine_text_sizing, term,
-                            timeout=timeout))
-        with _status(writer, term, "Tab Stop Width", bg_rgb, silent=silent):
-            attrs.update(td(maybe_determine_tab_stop_width, term,
-                            timeout=timeout))
-        with _status(writer, term, "Kitty Notifications", bg_rgb, silent=silent):
-            attrs.update(td(maybe_determine_kitty_notifications,
-                            term, **delay_kw))
-        with _status(writer, term, "Kitty Clipboard", bg_rgb, silent=silent):
-            attrs.update(td(maybe_determine_kitty_clipboard, term,
-                            **delay_kw))
-        with _status(writer, term, "Kitty Pointer Shapes", bg_rgb, silent=silent):
-            attrs.update(td(maybe_determine_kitty_pointer_shapes,
-                            term, **delay_kw))
+    with _status(writer, term, "XTGETTCAP", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_xtgettcap, term,
+                        timeout=timeout))
+    with _status(writer, term, "Kitty Graphics", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_kitty_graphics, term,
+                        timeout=timeout))
+    with _status(writer, term, "iTerm2 Features", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_iterm2_features, term,
+                        timeout=timeout))
+    with _status(writer, term, "Text Sizing", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_text_sizing, term,
+                        timeout=timeout))
+    with _status(writer, term, "Tab Stop Width", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_tab_stop_width, term,
+                        timeout=timeout))
+    with _status(writer, term, "Kitty Notifications", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_kitty_notifications, term,
+                        timeout=timeout))
+    with _status(writer, term, "Kitty Clipboard", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_kitty_clipboard, term,
+                        timeout=timeout))
+    with _status(writer, term, "Kitty Pointer Shapes", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_kitty_pointer_shapes, term,
+                        timeout=timeout))
     return attrs
 
 
