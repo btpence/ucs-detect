@@ -6,6 +6,8 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import datetime
+
 project = "ucs-detect"
 
 copyright = f"2023-{datetime.datetime.now().year}, Jeff Quast"
@@ -16,7 +18,6 @@ release = "1.0.7"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 
-# export DARK=1 for old, tired eyes!
 import os
 extensions = [
     "sphinxcontrib.jquery",

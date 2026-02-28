@@ -22,14 +22,14 @@ Detailed breakdown of how scores are calculated for *rxvt-unicode*:
    ===  =========================================  ===========  ====================
      #  Score Type                                 Raw Score    Final Scaled Score
    ===  =========================================  ===========  ====================
-     1  :ref:`WIDE <rxvtunicodewide>`              99.52%       47.5%
+     1  :ref:`WIDE <rxvtunicodewide>`              99.53%       48.0%
      2  :ref:`ZWJ <rxvtunicodezwj>`                0.69%        0.7%
      3  :ref:`LANG <rxvtunicodelang>`              97.51%       91.6%
      4  :ref:`VS16 <rxvtunicodevs16>`              50.00%       50.0%
      5  :ref:`VS15 <rxvtunicodevs15>`              0.00%        0.0%
-     6  :ref:`Capabilities <rxvtunicodedecmodes>`  42.86%       42.9%
+     6  :ref:`Capabilities <rxvtunicodedecmodes>`  25.00%       27.3%
      7  :ref:`Graphics <rxvtunicodegraphics>`      0%           0.0%
-     8  :ref:`TIME <rxvtunicodetime>`              8.22s        94.0%
+     8  :ref:`TIME <rxvtunicodetime>`              19.20s       79.9%
    ===  =========================================  ===========  ====================
 
 **Score Comparison Plot:**
@@ -44,7 +44,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 45.01%
+- Raw Final Score: 41.69%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +54,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 16.6%
+- Final Scaled Score: 12.0%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -62,10 +62,10 @@ The following plot shows how this terminal's scores compare to all other termina
 
 Wide character support calculation:
 
-- Total successful codepoints: 10846
-- Total codepoints tested: 10898
-- Formula: 10846 / 10898
-- Result: 99.52%
+- Total successful codepoints: 43386
+- Total codepoints tested: 43592
+- Formula: 43386 / 43592
+- Result: 99.53%
 
 **ZWJ Score Details:**
 
@@ -96,17 +96,22 @@ Variation Selector-15 support calculation:
 
 **Capabilities Score Details:**
 
-Notable terminal capabilities (3 / 7):
+Notable terminal capabilities (3 / 12):
 
-- Bracketed Paste (2004): **yes**
-- Synced Output (2026): **no**
-- Focus Events (1004): **yes**
-- Mouse SGR (1006): **yes**
-- Graphemes (2027): **no**
+- Set bracketed paste mode (2004): **yes**
+- Synchronized Output (2026): **no**
+- Send FocusIn/FocusOut events (1004): **yes**
+- Enable SGR Mouse Mode (1006): **yes**
+- Grapheme Clustering (2027): **no**
+- Bracketed Paste MIME (5522): **no**
 - Kitty Keyboard: **no**
 - XTGETTCAP: **no**
+- Text Sizing (OSC 66): **no**
+- Kitty Clipboard Protocol: **no**
+- Kitty Pointer Shapes (OSC 22): **no**
+- Kitty Notifications (OSC 99): **no**
 
-Raw score: 42.86%
+Raw score: 25.00%
 
 **Graphics Score Details:**
 
@@ -123,10 +128,10 @@ Scoring: 100% for modern (iTerm2/Kitty), 50% for legacy only (Sixel/ReGIS), 0% f
 
 Test execution time:
 
-- Elapsed time: 8.22 seconds
+- Elapsed time: 19.20 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 94.0%
+- Scaled result: 79.9%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -141,26 +146,26 @@ Geometric mean calculation:
 Wide character support
 ++++++++++++++++++++++
 
-Wide character support of *rxvt-unicode* is **99.5%** (52 errors of 10898 codepoints tested).
+Wide character support of *rxvt-unicode* is **99.5%** (206 errors of 43592 codepoints tested).
 
 Sequence of a WIDE character, from midpoint of alignment failure records:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  =================================================  =============  ==========  =========  =====================
+   ===  =================================================  =============  ==========  =========  ===========================
      #  Codepoint                                          Python         Category      wcwidth  Name
-   ===  =================================================  =============  ==========  =========  =====================
-     1  `U+0001D334 <https://codepoints.net/U+0001D334>`_  '\\U0001d334'  So                  2  TETRAGRAM FOR PATTERN
-   ===  =================================================  =============  ==========  =========  =====================
+   ===  =================================================  =============  ==========  =========  ===========================
+     1  `U+0001D32F <https://codepoints.net/U+0001D32F>`_  '\\U0001d32f'  So                  2  TETRAGRAM FOR GOING TO MEET
+   ===  =================================================  =============  ==========  =========  ===========================
 
 Total codepoints: 1
 
 
 - Shell test using `printf(1)`_, ``'|'`` should align in output::
 
-        $ printf "\xf0\x9d\x8c\xb4|\\n12|\\n"
-        𝌴|
+        $ printf "\xf0\x9d\x8c\xaf|\\n12|\\n"
+        𝌯|
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
@@ -913,24 +918,26 @@ DEC Private Modes Support
 +++++++++++++++++++++++++
 
 DEC private modes results for *rxvt-unicode*: 3 changeable modes
-of 3 supported out of 5 total modes tested (60.0% support, 60.0% changeable).
+of 3 supported out of 7 total modes tested (42.9% support, 42.9% changeable).
 
 Complete list of DEC private modes tested:
 
 .. table::
    :class: sphinx-datatable
 
-   ======  ===================  ============================  ===========  ============  =========
-     Mode  Name                 Description                   Supported    Changeable    Enabled
-   ======  ===================  ============================  ===========  ============  =========
-     1004  FOCUS_IN_OUT_EVENTS  Send FocusIn/FocusOut events  Yes          Yes           No
-     1006  MOUSE_EXTENDED_SGR   Enable SGR Mouse Mode         Yes          Yes           No
-     2004  BRACKETED_PASTE      Set bracketed paste mode      Yes          Yes           No
-     2026  SYNCHRONIZED_OUTPUT  Synchronized Output           No           No            No
-     2027  GRAPHEME_CLUSTERING  Grapheme Clustering           No           No            No
-   ======  ===================  ============================  ===========  ============  =========
+   ======  =====================  ===================================  ===========  ============  =========
+     Mode  Name                   Description                          Supported    Changeable    Enabled
+   ======  =====================  ===================================  ===========  ============  =========
+     1004  FOCUS_IN_OUT_EVENTS    Send FocusIn/FocusOut events         Yes          Yes           No
+     1006  MOUSE_EXTENDED_SGR     Enable SGR Mouse Mode                Yes          Yes           No
+     2004  BRACKETED_PASTE        Set bracketed paste mode             Yes          Yes           No
+     2026  SYNCHRONIZED_OUTPUT    Synchronized Output                  No           No            No
+     2027  GRAPHEME_CLUSTERING    Grapheme Clustering                  No           No            No
+     2048  IN_BAND_WINDOW_RESIZE  In-Band Window Resize Notifications  No           No            No
+     5522  BRACKETED_PASTE_MIME   Bracketed Paste MIME                 No           No            No
+   ======  =====================  ===================================  ===========  ============  =========
 
-**Summary**: 3 changeable, 2 not changeable.
+**Summary**: 3 changeable, 4 not changeable.
 
 .. _rxvtunicodekittykbd:
 
@@ -946,7 +953,7 @@ Kitty Keyboard Protocol
 XTGETTCAP (Terminfo Capabilities)
 +++++++++++++++++++++++++++++++++
 
-*rxvt-unicode* supports the ``XTGETTCAP`` sequence but returned no capabilities.
+*rxvt-unicode* does not support the ``XTGETTCAP`` sequence.
 
 .. _rxvtunicodereproduce:
 
@@ -964,7 +971,7 @@ with the following commands::
 Test Execution Time
 +++++++++++++++++++
 
-The test suite completed in **8.22 seconds** (8s).
+The test suite completed in **19.20 seconds** (19s).
 
 This time measurement represents the total duration of the test execution,
 including all Unicode wide character tests, emoji ZWJ sequences, variation

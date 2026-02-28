@@ -1,42 +1,41 @@
-.. _iterm2:
+.. _libvterm:
 
-iTerm2
-------
+libvterm
+--------
 
 
-Tested Software version 3.6.6 on Darwin.
-The homepage URL of this terminal is https://iterm2.com/.
+Tested Software version 0.3 on Linux.
 Full results available at ucs-detect_ repository path
-`data/iterm2.yaml <https://github.com/jquast/ucs-detect/blob/master/data/iterm2.yaml>`_.
+`data/vim-terminal.yaml <https://github.com/jquast/ucs-detect/blob/master/data/vim-terminal.yaml>`_.
 
-.. _iterm2scores:
+.. _libvtermscores:
 
 Score Breakdown
 +++++++++++++++
 
-Detailed breakdown of how scores are calculated for *iTerm2*:
+Detailed breakdown of how scores are calculated for *libvterm*:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  ====================================  ===========  ====================
-     #  Score Type                            Raw Score    Final Scaled Score
-   ===  ====================================  ===========  ====================
-     1  :ref:`WIDE <iterm2wide>`              99.94%       92.9%
-     2  :ref:`ZWJ <iterm2zwj>`                99.31%       99.3%
-     3  :ref:`LANG <iterm2lang>`              96.32%       87.7%
-     4  :ref:`VS16 <iterm2vs16>`              97.18%       97.2%
-     5  :ref:`VS15 <iterm2vs15>`              0.00%        0.0%
-     6  :ref:`Capabilities <iterm2decmodes>`  66.67%       72.7%
-     7  :ref:`Graphics <iterm2graphics>`      100%         100.0%
-     8  :ref:`TIME <iterm2time>`              672.82s      19.8%
-   ===  ====================================  ===========  ====================
+   ===  ======================================  ===========  ====================
+     #  Score Type                              Raw Score    Final Scaled Score
+   ===  ======================================  ===========  ====================
+     1  :ref:`WIDE <libvtermwide>`              99.53%       48.5%
+     2  :ref:`ZWJ <libvtermzwj>`                0.00%        0.0%
+     3  :ref:`LANG <libvtermlang>`              97.21%       90.7%
+     4  :ref:`VS16 <libvtermvs16>`              50.00%       50.0%
+     5  :ref:`VS15 <libvtermvs15>`              0.00%        0.0%
+     6  :ref:`Capabilities <libvtermdecmodes>`  33.33%       36.4%
+     7  :ref:`Graphics <libvtermgraphics>`      0%           0.0%
+     8  :ref:`TIME <libvtermtime>`              27.67s       73.7%
+   ===  ======================================  ===========  ====================
 
 **Score Comparison Plot:**
 
 The following plot shows how this terminal's scores compare to all other terminals tested.
 
-.. figure:: ../_static/plots/iterm2_scores_scaled.png
+.. figure:: ../_static/plots/libvterm_scores_scaled.png
    :align: center
    :width: 800px
 
@@ -44,7 +43,7 @@ The following plot shows how this terminal's scores compare to all other termina
 
 **Final Scaled Score Calculation:**
 
-- Raw Final Score: 75.91%
+- Raw Final Score: 42.26%
   (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)
   the categorized 'average' absolute support level of this terminal
   Note: TIME is normalized to 0-1 range before averaging.
@@ -54,7 +53,7 @@ The following plot shows how this terminal's scores compare to all other termina
   50% for legacy only (Sixel, ReGIS), 0% for none.
   Sixel/ReGIS support contributes to the GFX score at 50%.
 
-- Final Scaled Score: 70.8%
+- Final Scaled Score: 13.0%
   (normalized across all terminals tested).
   *Final Scaled scores* are normalized (0-100%) relative to all terminals tested
 
@@ -62,28 +61,28 @@ The following plot shows how this terminal's scores compare to all other termina
 
 Wide character support calculation:
 
-- Total successful codepoints: 3112
-- Total codepoints tested: 3114
-- Formula: 3112 / 3114
-- Result: 99.94%
+- Total successful codepoints: 43388
+- Total codepoints tested: 43592
+- Formula: 43388 / 43592
+- Result: 99.53%
 
 **ZWJ Score Details:**
 
 Emoji ZWJ (Zero-Width Joiner) support calculation:
 
-- Total successful sequences: 1435
+- Total successful sequences: 0
 - Total sequences tested: 1445
-- Formula: 1435 / 1445
-- Result: 99.31%
+- Formula: 0 / 1445
+- Result: 0.00%
 
 **VS16 Score Details:**
 
 Variation Selector-16 support calculation:
 
-- Errors: 12 of 426 codepoints tested
-- Success rate: 97.2%
-- Formula: 97.2 / 100
-- Result: 97.18%
+- Errors: 213 of 426 codepoints tested
+- Success rate: 50.0%
+- Formula: 50.0 / 100
+- Result: 50.00%
 
 **VS15 Score Details:**
 
@@ -96,31 +95,31 @@ Variation Selector-15 support calculation:
 
 **Capabilities Score Details:**
 
-Notable terminal capabilities (8 / 12):
+Notable terminal capabilities (4 / 12):
 
 - Set bracketed paste mode (2004): **yes**
-- Synchronized Output (2026): **yes**
+- Synchronized Output (2026): **no**
 - Send FocusIn/FocusOut events (1004): **yes**
 - Enable SGR Mouse Mode (1006): **yes**
-- Grapheme Clustering (2027): **yes**
-- Bracketed Paste MIME (5522): **yes**
+- Grapheme Clustering (2027): **no**
+- Bracketed Paste MIME (5522): **no**
 - Kitty Keyboard: **yes**
-- XTGETTCAP: **yes**
+- XTGETTCAP: **no**
 - Text Sizing (OSC 66): **no**
 - Kitty Clipboard Protocol: **no**
 - Kitty Pointer Shapes (OSC 22): **no**
 - Kitty Notifications (OSC 99): **no**
 
-Raw score: 66.67%
+Raw score: 33.33%
 
 **Graphics Score Details:**
 
-Graphics protocol support (100%):
+Graphics protocol support (0%):
 
-- Sixel: **yes**
+- Sixel: **no**
 - ReGIS: **no**
-- iTerm2: **yes**
-- Kitty: **yes**
+- iTerm2: **no**
+- Kitty: **no**
 
 Scoring: 100% for modern (iTerm2/Kitty), 50% for legacy only (Sixel/ReGIS), 0% for none
 
@@ -128,10 +127,10 @@ Scoring: 100% for modern (iTerm2/Kitty), 50% for legacy only (Sixel/ReGIS), 0% f
 
 Test execution time:
 
-- Elapsed time: 672.82 seconds
+- Elapsed time: 27.67 seconds
 - Note: This is a raw measurement; lower is better
 - Scaled score uses inverse log10 scaling across all terminals
-- Scaled result: 19.8%
+- Scaled result: 73.7%
 
 **LANG Score Details (Geometric Mean):**
 
@@ -139,44 +138,44 @@ Geometric mean calculation:
 
 - Formula: (p₁ × p₂ × ... × pₙ)^(1/n) where n = 94 languages
 - About `geometric mean <https://en.wikipedia.org/wiki/Geometric_mean>`_
-- Result: 96.32%
+- Result: 97.21%
 
-.. _iterm2wide:
+.. _libvtermwide:
 
 Wide character support
 ++++++++++++++++++++++
 
-Wide character support of *iTerm2* is **99.9%** (2 errors of 3114 codepoints tested).
+Wide character support of *libvterm* is **99.5%** (204 errors of 43592 codepoints tested).
 
 Sequence of a WIDE character, from midpoint of alignment failure records:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  =================================================  =============  ==========  =========  ===========
+   ===  =================================================  =============  ==========  =========  ==========================
      #  Codepoint                                          Python         Category      wcwidth  Name
-   ===  =================================================  =============  ==========  =========  ===========
-     1  `U+0001FAEF <https://codepoints.net/U+0001FAEF>`_  '\\U0001faef'  So                  2  FIGHT CLOUD
-   ===  =================================================  =============  ==========  =========  ===========
+   ===  =================================================  =============  ==========  =========  ==========================
+     1  `U+0001D316 <https://codepoints.net/U+0001D316>`_  '\\U0001d316'  So                  2  TETRAGRAM FOR HOLDING BACK
+   ===  =================================================  =============  ==========  =========  ==========================
 
 Total codepoints: 1
 
 
 - Shell test using `printf(1)`_, ``'|'`` should align in output::
 
-        $ printf "\xf0\x9f\xab\xaf|\\n12|\\n"
-        🫯|
+        $ printf "\xf0\x9d\x8c\x96|\\n12|\\n"
+        𝌖|
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 1.
+  while *libvterm* measures width 1.
 
-.. _iterm2zwj:
+.. _libvtermzwj:
 
 Emoji ZWJ support
 +++++++++++++++++
 
-Compatibility of *iTerm2* with the Unicode Emoji ZWJ sequence table is **99.3%** (10 errors of 1445 sequences tested).
+Compatibility of *libvterm* with the Unicode Emoji ZWJ sequence table is **0.0%** (1445 errors of 1445 sequences tested).
 
 Sequence of an Emoji ZWJ Sequence, from midpoint of alignment failure records:
 
@@ -186,10 +185,10 @@ Sequence of an Emoji ZWJ Sequence, from midpoint of alignment failure records:
    ===  =================================================  =============  ==========  =========  =================================
      #  Codepoint                                          Python         Category      wcwidth  Name
    ===  =================================================  =============  ==========  =========  =================================
-     1  `U+26F9 <https://codepoints.net/U+26F9>`_          '\\u26f9'      So                  1  PERSON WITH BALL
-     2  `U+0001F3FD <https://codepoints.net/U+0001F3FD>`_  '\\U0001f3fd'  Sk                  2  EMOJI MODIFIER FITZPATRICK TYPE-4
+     1  `U+0001F3C3 <https://codepoints.net/U+0001F3C3>`_  '\\U0001f3c3'  So                  2  RUNNER
+     2  `U+0001F3FF <https://codepoints.net/U+0001F3FF>`_  '\\U0001f3ff'  Sk                  2  EMOJI MODIFIER FITZPATRICK TYPE-6
      3  `U+200D <https://codepoints.net/U+200D>`_          '\\u200d'      Cf                  0  ZERO WIDTH JOINER
-     4  `U+2642 <https://codepoints.net/U+2642>`_          '\\u2642'      So                  1  MALE SIGN
+     4  `U+2640 <https://codepoints.net/U+2640>`_          '\\u2640'      So                  1  FEMALE SIGN
      5  `U+FE0F <https://codepoints.net/U+FE0F>`_          '\\ufe0f'      Mn                  0  VARIATION SELECTOR-16
    ===  =================================================  =============  ==========  =========  =================================
 
@@ -198,51 +197,50 @@ Total codepoints: 5
 
 - Shell test using `printf(1)`_, ``'|'`` should align in output::
 
-        $ printf "\xe2\x9b\xb9\xf0\x9f\x8f\xbd\xe2\x80\x8d\xe2\x99\x82\xef\xb8\x8f|\\n12|\\n"
-        ⛹🏽‍♂️|
+        $ printf "\xf0\x9f\x8f\x83\xf0\x9f\x8f\xbf\xe2\x80\x8d\xe2\x99\x80\xef\xb8\x8f|\\n12|\\n"
+        🏃🏿‍♀️|
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 3.
+  while *libvterm* measures width 11.
 
-.. _iterm2vs16:
+.. _libvtermvs16:
 
 Variation Selector-16 support
 +++++++++++++++++++++++++++++
 
-Emoji VS-16 results for *iTerm2* is 12 errors
-out of 426 total codepoints tested, 97.2% success.
+Emoji VS-16 results for *libvterm* is 213 errors
+out of 426 total codepoints tested, 50.0% success.
 Sequence of a NARROW Emoji made WIDE by *Variation Selector-16*, from midpoint of alignment failure records:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  =========================================  =========  ==========  =========  =====================
+   ===  =========================================  =========  ==========  =========  =======================
      #  Codepoint                                  Python     Category      wcwidth  Name
-   ===  =========================================  =========  ==========  =========  =====================
-     1  `U+0034 <https://codepoints.net/U+0034>`_  '4'        Nd                  1  DIGIT FOUR
-     2  `U+FE0F <https://codepoints.net/U+FE0F>`_  '\\ufe0f'  Mn                  0  VARIATION SELECTOR-16
-   ===  =========================================  =========  ==========  =========  =====================
+   ===  =========================================  =========  ==========  =========  =======================
+     1  `U+26D1 <https://codepoints.net/U+26D1>`_  '\\u26d1'  So                  1  HELMET WITH WHITE CROSS
+   ===  =========================================  =========  ==========  =========  =======================
 
-Total codepoints: 2
+Total codepoints: 1
 
 
 - Shell test using `printf(1)`_, ``'|'`` should align in output::
 
-        $ printf "4\xef\xb8\x8f|\\n12|\\n"
-        4️|
-        12|
+        $ printf "\xe2\x9b\x91|\\n1|\\n"
+        ⛑|
+        1|
 
-- python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 1.
+- python `wcwidth.wcswidth()`_ measures width 1,
+  while *libvterm* measures width 2.
 
 
-.. _iterm2vs15:
+.. _libvtermvs15:
 
 Variation Selector-15 support
 +++++++++++++++++++++++++++++
 
-Emoji VS-15 results for *iTerm2* is 158 errors
+Emoji VS-15 results for *libvterm* is 158 errors
 out of 158 total codepoints tested, 0.0% success.
 Sequence of a WIDE Emoji made NARROW by *Variation Selector-15*, from midpoint of alignment failure records:
 
@@ -266,15 +264,15 @@ Total codepoints: 2
         1|
 
 - python `wcwidth.wcswidth()`_ measures width 1,
-  while *iTerm2* measures width 2.
+  while *libvterm* measures width 2.
 
 
-.. _iterm2graphics:
+.. _libvtermgraphics:
 
 Graphics Protocol Support
 +++++++++++++++++++++++++
 
-*iTerm2* supports the following graphics protocols: Sixel_, `iTerm2 inline images`_, `Kitty graphics protocol`_.
+*libvterm* supports the following graphics protocols: `iTerm2 inline images`_.
 
 **Detection Methods:**
 
@@ -288,8 +286,8 @@ Graphics Protocol Support
 
 **Device Attributes Response:**
 
-- Extensions reported: 1, 2, 4, 6, 17, 18, 21, 22, 52
-- Sixel_ indicator (``4``): present
+- Extensions reported: 2
+- Sixel_ indicator (``4``): not present
 - ReGIS_ indicator (``3``): not present
 
 .. _Sixel: https://en.wikipedia.org/wiki/Sixel
@@ -297,75 +295,49 @@ Graphics Protocol Support
 .. _`iTerm2 inline images`: https://iterm2.com/documentation-images.html
 .. _`Kitty graphics protocol`: https://sw.kovidgoyal.net/kitty/graphics-protocol/
 
-.. _iterm2lang:
+.. _libvtermlang:
 
 Language Support
 ++++++++++++++++
 
-The following 74 languages were tested with 100% success:
+The following 71 languages were tested with 100% success:
 
-Aja, Amarakaeri, Arabic, Standard, Assyrian Neo-Aramaic, Baatonum, Bamun, Belanda Viri, Bora, Catalan (2), Chickasaw, Chinantec, Chiltepec, Dagaare, Southern, Dangme, Dari, Dendi, Dinka, Northeastern, Ditammari, Dzongkha, Evenki, Farsi, Western, Fon, French (Welche), Fur, Ga, Gen, Gilyak, Gumuz, Kabyle, Lamnso', Lao, Lingala (tones), Maldivian, Maori (2), Mazahua Central, Mirandese, Mixtec, Metlatónoc, Mòoré, Nanai, Navajo, Orok, Otomi, Mezquital, Panjabi, Eastern, Panjabi, Western, Pashto, Northern, Picard, Pular (Adlam), Saint Lucian Creole French, Secoya, Seraiki, Shan, Shipibo-Conibo, Sinhala, Siona, South Azerbaijani, Tagalog (Tagalog), Tai Dam, Tamazight, Central Atlas, Tamil, Tamil (Sri Lanka), Tem, Thai, Thai (2), Tibetan, Central, Ticuna, Uduk, Urdu, Urdu (2), Veps, Vietnamese, Waama, Yaneshaʼ, Yiddish, Eastern, Yoruba, Éwé.
+Aja, Amarakaeri, Arabic, Standard, Assyrian Neo-Aramaic, Baatonum, Bamun, Belanda Viri, Bora, Catalan (2), Chakma, Chickasaw, Chinantec, Chiltepec, Dagaare, Southern, Dangme, Dendi, Dinka, Northeastern, Ditammari, Dzongkha, Evenki, Fon, French (Welche), Fur, Ga, Gen, Gilyak, Gumuz, Kabyle, Lamnso', Lao, Lingala (tones), Maldivian, Maori (2), Mazahua Central, Mirandese, Mixtec, Metlatónoc, Mòoré, Nanai, Navajo, Orok, Otomi, Mezquital, Panjabi, Eastern, Pashto, Northern, Picard, Pular (Adlam), Saint Lucian Creole French, Secoya, Seraiki, Shan, Shipibo-Conibo, Siona, South Azerbaijani, Tagalog (Tagalog), Tai Dam, Tamazight, Central Atlas, Tamil, Tamil (Sri Lanka), Tem, Thai, Thai (2), Tibetan, Central, Ticuna, Uduk, Urdu, Urdu (2), Veps, Vietnamese, Waama, Yaneshaʼ, Yiddish, Eastern, Yoruba, Éwé.
 
-The following 20 languages are not fully supported:
-
-.. table::
-   :class: sphinx-datatable
-
-   =======================================================  ==========  =========  =============
-   lang                                                       n_errors    n_total  pct_success
-   =======================================================  ==========  =========  =============
-   :ref:`Sanskrit (Grantha) <iterm2langsanskritgrantha>`           219        293  25.3%
-   :ref:`Malayalam <iterm2langmalayalam>`                          252        845  70.2%
-   :ref:`Sanskrit <iterm2langsanskrit>`                            145        493  70.6%
-   :ref:`Bengali <iterm2langbengali>`                               97        385  74.8%
-   :ref:`Marathi <iterm2langmarathi>`                               86        391  78.0%
-   :ref:`Hindi <iterm2langhindi>`                                   82        390  79.0%
-   :ref:`Maithili <iterm2langmaithili>`                             71        357  80.1%
-   :ref:`Nepali <iterm2langnepali>`                                 70        352  80.1%
-   :ref:`Chakma <iterm2langchakma>`                                 47        267  82.4%
-   :ref:`Tamang, Eastern <iterm2langtamangeastern>`                 11         70  84.3%
-   :ref:`Gujarati <iterm2langgujarati>`                             50        343  85.4%
-   :ref:`Magahi <iterm2langmagahi>`                                 43        314  86.3%
-   :ref:`Bhojpuri <iterm2langbhojpuri>`                             41        313  86.9%
-   :ref:`Telugu <iterm2langtelugu>`                                 42        384  89.1%
-   :ref:`Javanese (Javanese) <iterm2langjavanesejavanese>`          43        530  91.9%
-   :ref:`Kannada <iterm2langkannada>`                               14        287  95.1%
-   :ref:`Burmese <iterm2langburmese>`                               10        268  96.3%
-   :ref:`Khmer, Central <iterm2langkhmercentral>`                    8        443  98.2%
-   :ref:`Mon <iterm2langmon>`                                        3        332  99.1%
-   :ref:`Khün <iterm2langkhn>`                                       1        396  99.7%
-   =======================================================  ==========  =========  =============
-
-.. _iterm2langsanskritgrantha:
-
-Sanskrit (Grantha)
-^^^^^^^^^^^^^^^^^^
-
-Sequence of language *Sanskrit (Grantha)* from midpoint of alignment failure records:
+The following 23 languages are not fully supported:
 
 .. table::
    :class: sphinx-datatable
 
-   ===  =================================================  =============  ==========  =========  =====================
-     #  Codepoint                                          Python         Category      wcwidth  Name
-   ===  =================================================  =============  ==========  =========  =====================
-     1  `U+00011305 <https://codepoints.net/U+00011305>`_  '\\U00011305'  Lo                  1  GRANTHA LETTER A
-     2  `U+00011302 <https://codepoints.net/U+00011302>`_  '\\U00011302'  Mc                  0  GRANTHA SIGN ANUSVARA
-   ===  =================================================  =============  ==========  =========  =====================
+   =========================================================  ==========  =========  =============
+   lang                                                         n_errors    n_total  pct_success
+   =========================================================  ==========  =========  =============
+   :ref:`Malayalam <libvtermlangmalayalam>`                          271        845  67.9%
+   :ref:`Bengali <libvtermlangbengali>`                              117        385  69.6%
+   :ref:`Sanskrit <libvtermlangsanskrit>`                            145        493  70.6%
+   :ref:`Marathi <libvtermlangmarathi>`                               88        391  77.5%
+   :ref:`Hindi <libvtermlanghindi>`                                   82        390  79.0%
+   :ref:`Maithili <libvtermlangmaithili>`                             71        357  80.1%
+   :ref:`Nepali <libvtermlangnepali>`                                 70        352  80.1%
+   :ref:`Tamang, Eastern <libvtermlangtamangeastern>`                 11         70  84.3%
+   :ref:`Gujarati <libvtermlanggujarati>`                             50        343  85.4%
+   :ref:`Magahi <libvtermlangmagahi>`                                 43        314  86.3%
+   :ref:`Sanskrit (Grantha) <libvtermlangsanskritgrantha>`            39        293  86.7%
+   :ref:`Bhojpuri <libvtermlangbhojpuri>`                             41        313  86.9%
+   :ref:`Telugu <libvtermlangtelugu>`                                 42        384  89.1%
+   :ref:`Farsi, Western <libvtermlangfarsiwestern>`                    4         49  91.8%
+   :ref:`Javanese (Javanese) <libvtermlangjavanesejavanese>`          43        530  91.9%
+   :ref:`Dari <libvtermlangdari>`                                      4         54  92.6%
+   :ref:`Kannada <libvtermlangkannada>`                               15        287  94.8%
+   :ref:`Sinhala <libvtermlangsinhala>`                               11        258  95.7%
+   :ref:`Burmese <libvtermlangburmese>`                               10        268  96.3%
+   :ref:`Khmer, Central <libvtermlangkhmercentral>`                    8        443  98.2%
+   :ref:`Panjabi, Western <libvtermlangpanjabiwestern>`                1         62  98.4%
+   :ref:`Mon <libvtermlangmon>`                                        3        332  99.1%
+   :ref:`Khün <libvtermlangkhn>`                                       1        396  99.7%
+   =========================================================  ==========  =========  =============
 
-Total codepoints: 2
-
-
-- Shell test using `printf(1)`_, ``'|'`` should align in output::
-
-        $ printf "\xf0\x91\x8c\x85\xf0\x91\x8c\x82|\\n12|\\n"
-        𑌅𑌂|
-        12|
-
-- python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 1.
-
-.. _iterm2langmalayalam:
+.. _libvtermlangmalayalam:
 
 Malayalam
 ^^^^^^^^^
@@ -394,9 +366,39 @@ Total codepoints: 4
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 3.
+  while *libvterm* measures width 3.
 
-.. _iterm2langsanskrit:
+.. _libvtermlangbengali:
+
+Bengali
+^^^^^^^
+
+Sequence of language *Bengali* from midpoint of alignment failure records:
+
+.. table::
+   :class: sphinx-datatable
+
+   ===  =========================================  =========  ==========  =========  =====================
+     #  Codepoint                                  Python     Category      wcwidth  Name
+   ===  =========================================  =========  ==========  =========  =====================
+     1  `U+0995 <https://codepoints.net/U+0995>`_  '\\u0995'  Lo                  1  BENGALI LETTER KA
+     2  `U+09BE <https://codepoints.net/U+09BE>`_  '\\u09be'  Mc                  0  BENGALI VOWEL SIGN AA
+     3  `U+200C <https://codepoints.net/U+200C>`_  '\\u200c'  Cf                  0  ZERO WIDTH NON-JOINER
+   ===  =========================================  =========  ==========  =========  =====================
+
+Total codepoints: 3
+
+
+- Shell test using `printf(1)`_, ``'|'`` should align in output::
+
+        $ printf "\xe0\xa6\x95\xe0\xa6\xbe\xe2\x80\x8c|\\n12|\\n"
+        কা‌|
+        12|
+
+- python `wcwidth.wcswidth()`_ measures width 2,
+  while *libvterm* measures width 8.
+
+.. _libvtermlangsanskrit:
 
 Sanskrit
 ^^^^^^^^
@@ -425,37 +427,7 @@ Total codepoints: 4
         12|
 
 
-.. _iterm2langbengali:
-
-Bengali
-^^^^^^^
-
-Sequence of language *Bengali* from midpoint of alignment failure records:
-
-.. table::
-   :class: sphinx-datatable
-
-   ===  =========================================  =========  ==========  =========  =====================
-     #  Codepoint                                  Python     Category      wcwidth  Name
-   ===  =========================================  =========  ==========  =========  =====================
-     1  `U+0995 <https://codepoints.net/U+0995>`_  '\\u0995'  Lo                  1  BENGALI LETTER KA
-     2  `U+09BF <https://codepoints.net/U+09BF>`_  '\\u09bf'  Mc                  0  BENGALI VOWEL SIGN I
-     3  `U+0982 <https://codepoints.net/U+0982>`_  '\\u0982'  Mc                  0  BENGALI SIGN ANUSVARA
-   ===  =========================================  =========  ==========  =========  =====================
-
-Total codepoints: 3
-
-
-- Shell test using `printf(1)`_, ``'|'`` should align in output::
-
-        $ printf "\xe0\xa6\x95\xe0\xa6\xbf\xe0\xa6\x82|\\n12|\\n"
-        কিং|
-        12|
-
-- python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 3.
-
-.. _iterm2langmarathi:
+.. _libvtermlangmarathi:
 
 Marathi
 ^^^^^^^
@@ -484,7 +456,7 @@ Total codepoints: 4
         12|
 
 
-.. _iterm2langhindi:
+.. _libvtermlanghindi:
 
 Hindi
 ^^^^^
@@ -513,7 +485,7 @@ Total codepoints: 4
         12|
 
 
-.. _iterm2langmaithili:
+.. _libvtermlangmaithili:
 
 Maithili
 ^^^^^^^^
@@ -542,7 +514,7 @@ Total codepoints: 4
         12|
 
 
-.. _iterm2langnepali:
+.. _libvtermlangnepali:
 
 Nepali
 ^^^^^^
@@ -571,38 +543,7 @@ Total codepoints: 4
         12|
 
 
-.. _iterm2langchakma:
-
-Chakma
-^^^^^^
-
-Sequence of language *Chakma* from midpoint of alignment failure records:
-
-.. table::
-   :class: sphinx-datatable
-
-   ===  =================================================  =============  ==========  =========  ===================
-     #  Codepoint                                          Python         Category      wcwidth  Name
-   ===  =================================================  =============  ==========  =========  ===================
-     1  `U+00011107 <https://codepoints.net/U+00011107>`_  '\\U00011107'  Lo                  1  CHAKMA LETTER KAA
-     2  `U+00011133 <https://codepoints.net/U+00011133>`_  '\\U00011133'  Mn                  0  CHAKMA VIRAMA
-     3  `U+00011120 <https://codepoints.net/U+00011120>`_  '\\U00011120'  Lo                  1  CHAKMA LETTER YYAA
-     4  `U+0001112C <https://codepoints.net/U+0001112C>`_  '\\U0001112c'  Mc                  0  CHAKMA VOWEL SIGN E
-   ===  =================================================  =============  ==========  =========  ===================
-
-Total codepoints: 4
-
-
-- Shell test using `printf(1)`_, ``'|'`` should align in output::
-
-        $ printf "\xf0\x91\x84\x87\xf0\x91\x84\xb3\xf0\x91\x84\xa0\xf0\x91\x84\xac|\\n123|\\n"
-        𑄇𑄳𑄠𑄬|
-        123|
-
-- python `wcwidth.wcswidth()`_ measures width 3,
-  while *iTerm2* measures width 2.
-
-.. _iterm2langtamangeastern:
+.. _libvtermlangtamangeastern:
 
 Tamang, Eastern
 ^^^^^^^^^^^^^^^
@@ -631,7 +572,7 @@ Total codepoints: 4
         12|
 
 
-.. _iterm2langgujarati:
+.. _libvtermlanggujarati:
 
 Gujarati
 ^^^^^^^^
@@ -660,9 +601,9 @@ Total codepoints: 4
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 3.
+  while *libvterm* measures width 3.
 
-.. _iterm2langmagahi:
+.. _libvtermlangmagahi:
 
 Magahi
 ^^^^^^
@@ -691,7 +632,37 @@ Total codepoints: 4
         12|
 
 
-.. _iterm2langbhojpuri:
+.. _libvtermlangsanskritgrantha:
+
+Sanskrit (Grantha)
+^^^^^^^^^^^^^^^^^^
+
+Sequence of language *Sanskrit (Grantha)* from midpoint of alignment failure records:
+
+.. table::
+   :class: sphinx-datatable
+
+   ===  =================================================  =============  ==========  =========  =====================
+     #  Codepoint                                          Python         Category      wcwidth  Name
+   ===  =================================================  =============  ==========  =========  =====================
+     1  `U+00011315 <https://codepoints.net/U+00011315>`_  '\\U00011315'  Lo                  1  GRANTHA LETTER KA
+     2  `U+0001133E <https://codepoints.net/U+0001133E>`_  '\\U0001133e'  Mc                  0  GRANTHA VOWEL SIGN AA
+     3  `U+00011302 <https://codepoints.net/U+00011302>`_  '\\U00011302'  Mc                  0  GRANTHA SIGN ANUSVARA
+   ===  =================================================  =============  ==========  =========  =====================
+
+Total codepoints: 3
+
+
+- Shell test using `printf(1)`_, ``'|'`` should align in output::
+
+        $ printf "\xf0\x91\x8c\x95\xf0\x91\x8c\xbe\xf0\x91\x8c\x82|\\n12|\\n"
+        𑌕𑌾𑌂|
+        12|
+
+- python `wcwidth.wcswidth()`_ measures width 2,
+  while *libvterm* measures width 3.
+
+.. _libvtermlangbhojpuri:
 
 Bhojpuri
 ^^^^^^^^
@@ -723,9 +694,9 @@ Total codepoints: 7
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 4.
+  while *libvterm* measures width 4.
 
-.. _iterm2langtelugu:
+.. _libvtermlangtelugu:
 
 Telugu
 ^^^^^^
@@ -753,9 +724,36 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 3.
+  while *libvterm* measures width 3.
 
-.. _iterm2langjavanesejavanese:
+.. _libvtermlangfarsiwestern:
+
+Farsi, Western
+^^^^^^^^^^^^^^
+
+Sequence of language *Farsi, Western* from midpoint of alignment failure records:
+
+.. table::
+   :class: sphinx-datatable
+
+   ===  =========================================  =========  ==========  =========  =====================
+     #  Codepoint                                  Python     Category      wcwidth  Name
+   ===  =========================================  =========  ==========  =========  =====================
+     1  `U+062A <https://codepoints.net/U+062A>`_  '\\u062a'  Lo                  1  ARABIC LETTER TEH
+     2  `U+200C <https://codepoints.net/U+200C>`_  '\\u200c'  Cf                  0  ZERO WIDTH NON-JOINER
+   ===  =========================================  =========  ==========  =========  =====================
+
+Total codepoints: 2
+
+
+- Shell test using `printf(1)`_, ``'|'`` should align in output::
+
+        $ printf "\xd8\xaa\xe2\x80\x8c|\\n1|\\n"
+        ت‌|
+        1|
+
+
+.. _libvtermlangjavanesejavanese:
 
 Javanese (Javanese)
 ^^^^^^^^^^^^^^^^^^^
@@ -785,9 +783,38 @@ Total codepoints: 5
         1234|
 
 - python `wcwidth.wcswidth()`_ measures width 4,
-  while *iTerm2* measures width 5.
+  while *libvterm* measures width 5.
 
-.. _iterm2langkannada:
+.. _libvtermlangdari:
+
+Dari
+^^^^
+
+Sequence of language *Dari* from midpoint of alignment failure records:
+
+.. table::
+   :class: sphinx-datatable
+
+   ===  =========================================  =========  ==========  =========  =====================
+     #  Codepoint                                  Python     Category      wcwidth  Name
+   ===  =========================================  =========  ==========  =========  =====================
+     1  `U+062A <https://codepoints.net/U+062A>`_  '\\u062a'  Lo                  1  ARABIC LETTER TEH
+     2  `U+200C <https://codepoints.net/U+200C>`_  '\\u200c'  Cf                  0  ZERO WIDTH NON-JOINER
+   ===  =========================================  =========  ==========  =========  =====================
+
+Total codepoints: 2
+
+
+- Shell test using `printf(1)`_, ``'|'`` should align in output::
+
+        $ printf "\xd8\xaa\xe2\x80\x8c|\\n1|\\n"
+        ت‌|
+        1|
+
+- python `wcwidth.wcswidth()`_ measures width 1,
+  while *libvterm* measures width 7.
+
+.. _libvtermlangkannada:
 
 Kannada
 ^^^^^^^
@@ -815,9 +842,39 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 3.
+  while *libvterm* measures width 3.
 
-.. _iterm2langburmese:
+.. _libvtermlangsinhala:
+
+Sinhala
+^^^^^^^
+
+Sequence of language *Sinhala* from midpoint of alignment failure records:
+
+.. table::
+   :class: sphinx-datatable
+
+   ===  =========================================  =========  ==========  =========  =================================
+     #  Codepoint                                  Python     Category      wcwidth  Name
+   ===  =========================================  =========  ==========  =========  =================================
+     1  `U+0D9A <https://codepoints.net/U+0D9A>`_  '\\u0d9a'  Lo                  1  SINHALA LETTER ALPAPRAANA KAYANNA
+     2  `U+0DCA <https://codepoints.net/U+0DCA>`_  '\\u0dca'  Mn                  0  SINHALA SIGN AL-LAKUNA
+     3  `U+200D <https://codepoints.net/U+200D>`_  '\\u200d'  Cf                  0  ZERO WIDTH JOINER
+   ===  =========================================  =========  ==========  =========  =================================
+
+Total codepoints: 3
+
+
+- Shell test using `printf(1)`_, ``'|'`` should align in output::
+
+        $ printf "\xe0\xb6\x9a\xe0\xb7\x8a\xe2\x80\x8d|\\n1|\\n"
+        ක්‍|
+        1|
+
+- python `wcwidth.wcswidth()`_ measures width 1,
+  while *libvterm* measures width 7.
+
+.. _libvtermlangburmese:
 
 Burmese
 ^^^^^^^
@@ -845,9 +902,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 3.
+  while *libvterm* measures width 3.
 
-.. _iterm2langkhmercentral:
+.. _libvtermlangkhmercentral:
 
 Khmer, Central
 ^^^^^^^^^^^^^^
@@ -877,9 +934,38 @@ Total codepoints: 5
         123|
 
 - python `wcwidth.wcswidth()`_ measures width 3,
-  while *iTerm2* measures width 4.
+  while *libvterm* measures width 4.
 
-.. _iterm2langmon:
+.. _libvtermlangpanjabiwestern:
+
+Panjabi, Western
+^^^^^^^^^^^^^^^^
+
+Sequence of language *Panjabi, Western* from midpoint of alignment failure records:
+
+.. table::
+   :class: sphinx-datatable
+
+   ===  =========================================  =========  ==========  =========  ========================
+     #  Codepoint                                  Python     Category      wcwidth  Name
+   ===  =========================================  =========  ==========  =========  ========================
+     1  `U+06D2 <https://codepoints.net/U+06D2>`_  '\\u06d2'  Lo                  1  ARABIC LETTER YEH BARREE
+     2  `U+200C <https://codepoints.net/U+200C>`_  '\\u200c'  Cf                  0  ZERO WIDTH NON-JOINER
+   ===  =========================================  =========  ==========  =========  ========================
+
+Total codepoints: 2
+
+
+- Shell test using `printf(1)`_, ``'|'`` should align in output::
+
+        $ printf "\xdb\x92\xe2\x80\x8c|\\n1|\\n"
+        ے‌|
+        1|
+
+- python `wcwidth.wcswidth()`_ measures width 1,
+  while *libvterm* measures width 7.
+
+.. _libvtermlangmon:
 
 Mon
 ^^^
@@ -907,9 +993,9 @@ Total codepoints: 3
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 3.
+  while *libvterm* measures width 3.
 
-.. _iterm2langkhn:
+.. _libvtermlangkhn:
 
 Khün
 ^^^^
@@ -938,15 +1024,15 @@ Total codepoints: 4
         12|
 
 - python `wcwidth.wcswidth()`_ measures width 2,
-  while *iTerm2* measures width 3.
+  while *libvterm* measures width 3.
 
-.. _iterm2decmodes:
+.. _libvtermdecmodes:
 
 DEC Private Modes Support
 +++++++++++++++++++++++++
 
-DEC private modes results for *iTerm2*: 5 changeable modes
-of 7 supported out of 7 total modes tested (100.0% support, 71.4% changeable).
+DEC private modes results for *libvterm*: 3 changeable modes
+of 3 supported out of 7 total modes tested (42.9% support, 42.9% changeable).
 
 Complete list of DEC private modes tested:
 
@@ -959,20 +1045,20 @@ Complete list of DEC private modes tested:
      1004  FOCUS_IN_OUT_EVENTS    Send FocusIn/FocusOut events         Yes          Yes           No
      1006  MOUSE_EXTENDED_SGR     Enable SGR Mouse Mode                Yes          Yes           No
      2004  BRACKETED_PASTE        Set bracketed paste mode             Yes          Yes           No
-     2026  SYNCHRONIZED_OUTPUT    Synchronized Output                  Yes          Yes           No
-     2027  GRAPHEME_CLUSTERING    Grapheme Clustering                  Yes          No            No
-     2048  IN_BAND_WINDOW_RESIZE  In-Band Window Resize Notifications  Yes          Yes           No
-     5522  BRACKETED_PASTE_MIME   Bracketed Paste MIME                 Yes          No            No
+     2026  SYNCHRONIZED_OUTPUT    Synchronized Output                  No           No            No
+     2027  GRAPHEME_CLUSTERING    Grapheme Clustering                  No           No            No
+     2048  IN_BAND_WINDOW_RESIZE  In-Band Window Resize Notifications  No           No            No
+     5522  BRACKETED_PASTE_MIME   Bracketed Paste MIME                 No           No            No
    ======  =====================  ===================================  ===========  ============  =========
 
-**Summary**: 5 changeable, 2 not changeable.
+**Summary**: 3 changeable, 4 not changeable.
 
-.. _iterm2kittykbd:
+.. _libvtermkittykbd:
 
 Kitty Keyboard Protocol
 +++++++++++++++++++++++
 
-*iTerm2* supports the `Kitty keyboard protocol`_.
+*libvterm* supports the `Kitty keyboard protocol`_.
 
 .. table::
    :class: sphinx-datatable
@@ -993,108 +1079,30 @@ responds with the active flags value.
 
 .. _`Kitty keyboard protocol`: https://sw.kovidgoyal.net/kitty/keyboard-protocol/
 
-.. _iterm2xtgettcap:
+.. _libvtermxtgettcap:
 
 XTGETTCAP (Terminfo Capabilities)
 +++++++++++++++++++++++++++++++++
 
-*iTerm2* supports the ``XTGETTCAP`` sequence and reports **63** terminfo capabilities.
+*libvterm* does not support the ``XTGETTCAP`` sequence.
 
-.. table::
-   :class: sphinx-datatable
-
-   ===  ============  ======================  ==================
-     #  Capability    Description             Value
-   ===  ============  ======================  ==================
-     1  Co            Number of colors        ``256``
-     2  TN            Terminal name           ``xterm-256color``
-     3  bel           Bell                    ````
-     4  blink         Enter blink mode        ``[5m``
-     5  bold          Enter bold mode         ``[1m``
-     6  civis         Hide cursor             ``[?25l``
-     7  clear         Clear screen            ``[H[2J``
-     8  cnorm         Normal cursor           ``[?12l[?25h``
-     9  colors        Max colors              ``256``
-    10  cr            Carriage return         ``
-                                              ``
-    11  csr           Change scroll region    ``[%i%p1%d;%p2%dr``
-    12  cub           Cursor left n           ``[%p1%dD``
-    13  cub1          Cursor left             ````
-    14  cud           Cursor down n           ``[%p1%dB``
-    15  cud1          Cursor down             ``
-                                              ``
-    16  cuf           Cursor right n          ``[%p1%dC``
-    17  cuf1          Cursor right            ``[C``
-    18  cup           Cursor address          ``[%i%p1%d;%p2%dH``
-    19  cuu           Cursor up n             ``[%p1%dA``
-    20  cuu1          Cursor up               ``[A``
-    21  cvvis         Very visible cursor     ``[?12;25h``
-    22  dch           Delete n characters     ``[%p1%dP``
-    23  dch1          Delete character        ``[P``
-    24  dim           Enter dim mode          ``[2m``
-    25  dl            Delete n lines          ``[%p1%dM``
-    26  dl1           Delete line             ``[M``
-    27  ech           Erase characters        ``[%p1%dX``
-    28  ed            Clear to end of screen  ``[J``
-    29  el            Clear to end of line    ``[K``
-    30  el1           Clear to start of line  ``[1K``
-    31  flash         Flash screen            ``[?5h$<100/>[?5l``
-    32  home          Cursor home             ``[H``
-    33  hpa           Horizontal position     ``[%i%p1%dG``
-    34  ich           Insert n characters     ``[%p1%d@``
-    35  il            Insert n lines          ``[%p1%dL``
-    36  il1           Insert line             ``[L``
-    37  ind           Scroll forward          ``
-                                              ``
-    38  indn          Scroll forward n        ``[%p1%dS``
-    39  op            Original pair           ``[39;49m``
-    40  rc            Restore cursor          ``8``
-    41  rev           Enter reverse mode      ``[7m``
-    42  rin           Scroll reverse n        ``[%p1%dT``
-    43  ritm          Exit italics mode       ``[23m``
-    44  rmam          Disable line wrap       ``[?7l``
-    45  rmcup         Exit alt screen         ``[?1049l``
-    46  rmkx          Keypad local mode       ``[?1l>``
-    47  rmso          Exit standout mode      ``[27m``
-    48  rmul          Exit underline mode     ``[24m``
-    49  sc            Save cursor             ``7``
-    50  setab         Set background color    ``[%?%p1%{8}%<%t4%p1%d%e%p1%{16}%<%t10%p1%{8}%-%d%e48;5;%p...``
-    51  setaf         Set foreground color    ``[%?%p1%{8}%<%t3%p1%d%e%p1%{16}%<%t9%p1%{8}%-%d%e38;5;%p1...``
-    52  sgr0          Reset attributes        ``(B[m``
-    53  sitm          Enter italics mode      ``[3m``
-    54  smam          Enable line wrap        ``[?7h``
-    55  smcup         Enter alt screen        ``[?1049h``
-    56  smkx          Keypad transmit mode    ``[?1h=``
-    57  smso          Enter standout mode     ``[7m``
-    58  smul          Enter underline mode    ``[4m``
-    59  u6            CPR response format     ``[%i%d;%dR``
-    60  u7            CPR request             ``[6n``
-    61  u8            DA response format      ``[?1;2c``
-    62  u9            DA request              ``[c``
-    63  vpa           Vertical position       ``[%i%p1%dd``
-   ===  ============  ======================  ==================
-
-The ``XTGETTCAP`` sequence (``DCS + q Pt ST``) allows applications to query
-terminfo capabilities directly from the terminal emulator, rather than relying
-on the system terminfo database.
-
-.. _iterm2reproduce:
+.. _libvtermreproduce:
 
 Reproduction
 ++++++++++++
 
-To reproduce these results for *iTerm2*, install and run ucs-detect_
+To reproduce these results for *libvterm*, install and run ucs-detect_
 with the following commands::
 
     pip install ucs-detect
-    ucs-detect --rerun data/iterm2.yaml
+    ucs-detect --rerun data/vim-terminal.yaml
 
-.. _iterm2time:
+.. _libvtermtime:
 
 Test Execution Time
 +++++++++++++++++++
 
-The test suite completed in **672.82 seconds** (672s).
+The test suite completed in **27.67 seconds** (27s).
 
 This time measurement represents the total duration of the test execution,
 including all Unicode wide character tests, emoji ZWJ sequences, variation
