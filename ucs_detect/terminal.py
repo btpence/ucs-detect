@@ -1,5 +1,6 @@
 # std imports
 import os
+import re
 import sys
 import time
 import warnings
@@ -136,10 +137,21 @@ def maybe_determine_da_and_sixel(term, timeout=1.0):
     return result
 
 
+# OSC sequences (e.g. color query responses ESC ] Ps ; ... ST/BEL) that may
+# linger in the input buffer after their CPR boundary guard and get mistakenly
+# read as an ENQ answerback.
+_RE_OSC = re.compile(r'\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)')
+
+
 def _read_dcs_or_plain_response(term, timeout=0.5):
-    """Read a response, stripping any DCS wrapper."""
+    """Read a response, stripping any DCS wrapper or stale OSC sequences."""
     response = term.flushinp(timeout=timeout)
     if not response:
+        return ''
+
+    # Strip any OSC sequences that leaked from colour queries.
+    response = _RE_OSC.sub('', response)
+    if not response.strip():
         return ''
 
     if '\x1bP' in response:
@@ -280,12 +292,12 @@ def maybe_determine_colors(term, writer, timeout=1.0):
     r, g, b = term.get_fgcolor(timeout=timeout)
     if (r, g, b) != (-1, -1, -1):
         result['foreground_color_rgb'] = [r, g, b]
-        result['foreground_color_hex'] = term.get_fgcolor_hex(timeout=timeout)
+        result['foreground_color_hex'] = f"#{r:04x}{g:04x}{b:04x}"
 
     r, g, b = term.get_bgcolor(timeout=timeout)
     if (r, g, b) != (-1, -1, -1):
         result['background_color_rgb'] = [r, g, b]
-        result['background_color_hex'] = term.get_bgcolor_hex(timeout=timeout)
+        result['background_color_hex'] = f"#{r:04x}{g:04x}{b:04x}"
 
     return result
 
