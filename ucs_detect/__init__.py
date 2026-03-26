@@ -581,6 +581,11 @@ def _build_capabilities_kv_pairs(term, results):
     else:
         pairs.append(("Kitty Pointer Shapes?", _color_yes_no(term, False)))
 
+    has_color_report = bool(
+        results.get('foreground_color_hex') or results.get('background_color_hex'))
+    pairs.append(("Color Report (OSC 10/11)?",
+                  _color_yes_no(term, has_color_report)))
+
     pairs.sort(key=lambda p: p[0].lower())
     return pairs
 

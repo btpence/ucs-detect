@@ -82,6 +82,13 @@ def get_tty_size(term, writer):
 
 
 _DPM = blessed.Terminal.DecPrivateMode
+
+# These modes are queried via DECRQM (get_dec_mode), not blessed's does_mouse()
+# or does_inband_resize() convenience methods. On Windows, blessed emulates mouse
+# and resize events via the Win32 console API and those methods return True even
+# when the terminal does not support the underlying DEC private modes. DECRQM
+# queries the terminal directly, so only native SGR Mouse (1006) and In-Band
+# Window Resize (2048) support is reported.
 NOTABLE_DEC_MODES = [
     _DPM.BRACKETED_PASTE,
     _DPM.SYNCHRONIZED_OUTPUT,

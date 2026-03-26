@@ -934,10 +934,11 @@ def score_capabilities(data):
     """
     Calculate score as fraction of notable terminal capabilities supported.
 
-    Checks 12 capabilities: Bracketed Paste (mode 2004), Synced Output (mode 2026),
+    Checks 13 capabilities: Bracketed Paste (mode 2004), Synced Output (mode 2026),
     Focus Events (mode 1004), Mouse SGR (mode 1006), Graphemes (mode 2027),
     Bracketed Paste MIME (mode 5522), Kitty Keyboard, XTGETTCAP, Text Sizing,
-    Kitty Clipboard, Kitty Pointer Shapes, and Kitty Notifications.
+    Kitty Clipboard, Kitty Pointer Shapes, Kitty Notifications, and
+    Color Report (OSC 10/11).
 
     :rtype: float
     :returns: fraction 0.0-1.0 of capabilities supported
@@ -948,7 +949,7 @@ def score_capabilities(data):
 
     modes = tr.get("modes") or {}
     count = 0
-    total = 12
+    total = 13
 
     for mode_num in (_DPM.BRACKETED_PASTE, _DPM.SYNCHRONIZED_OUTPUT,
                      _DPM.FOCUS_IN_OUT_EVENTS, _DPM.MOUSE_EXTENDED_SGR,
@@ -977,6 +978,9 @@ def score_capabilities(data):
 
     kitty_notif = tr.get("kitty_notifications")
     if isinstance(kitty_notif, dict) and kitty_notif.get("supported", False):
+        count += 1
+
+    if tr.get("foreground_color_hex") or tr.get("background_color_hex"):
         count += 1
 
     return count / total
@@ -1153,6 +1157,12 @@ def display_capabilities_table(score_table):
         kitty_notif = tr.get('kitty_notifications')
         row["Kitty Notif"] = _capability_yes_no(
             (isinstance(kitty_notif, dict) and kitty_notif.get('supported', False))
+            if tested else None,
+            sw_name, suffix)
+
+        # Color Report (OSC 10/11)
+        row["Color Report"] = _capability_yes_no(
+            (bool(tr.get('foreground_color_hex') or tr.get('background_color_hex')))
             if tested else None,
             sw_name, suffix)
 
@@ -1359,6 +1369,8 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
             ("Kitty Notifications (OSC 99)",
              isinstance(tr.get("kitty_notifications"), dict)
              and tr.get("kitty_notifications", {}).get("supported", False)),
+            ("Color Report (OSC 10/11)",
+             bool(tr.get("foreground_color_hex") or tr.get("background_color_hex"))),
         ]
         cap_count = sum(1 for _, v in cap_checks if v)
         print(f"Notable terminal capabilities ({cap_count} / {len(cap_checks)}):")
