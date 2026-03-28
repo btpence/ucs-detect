@@ -15,13 +15,7 @@ def build_command_from_yaml(yaml_file):
 
     session_args = data.get('session_arguments', {})
 
-    cmd = ['ucs-detect', '--save-yaml', str(yaml_file)]
-
-    # Add software name and version from YAML to avoid prompting
-    if data.get('software_name'):
-        cmd.extend(['--set-software-name', data['software_name']])
-    if data.get('software_version'):
-        cmd.extend(['--set-software-version', data['software_version']])
+    cmd = ['ucs-detect', '--rerun', str(yaml_file)]
 
     # Map YAML keys to CLI arguments
     arg_mapping = {

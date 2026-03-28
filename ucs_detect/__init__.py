@@ -97,7 +97,7 @@ def init_term(stream):
     return term, writer
 
 
-def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes_pct, limit_codepoints_wide_pct, include_uncommon_codepoints, save_yaml, save_json, no_terminal_test, no_languages_test, timeout_cps, timeout_query, stop_at_error, set_software_name, set_software_version, limit_category_time=0, cursor_report_delay_ms=0, detect_all_dec_modes=False, test_only="all", verify_software_name_and_version=False, terminal_full_probe=False, silent=False, no_final_summary=False, **_kwargs):
+def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes_pct, limit_codepoints_wide_pct, include_uncommon_codepoints, save_yaml, save_json, no_terminal_test, no_languages_test, timeout_cps, timeout_query, stop_at_error, set_software_name, set_software_version, limit_category_time=0, cursor_report_delay_ms=0, detect_all_dec_modes=False, test_only="all", verify_software_name_and_version=False, terminal_full_probe=False, silent=False, no_final_summary=False, rerun_software_name='', rerun_software_version='', **_kwargs):
     """Program entry point."""
 
     def _should_run(*categories):
@@ -237,6 +237,34 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
                 terminal_version = auto_version
         else:
             terminal_version = input('Enter "Software Version": ')
+
+        # When re-running, prompt if the resolved name or version differs
+        # from what was saved in the YAML file.
+        if rerun_software_name or rerun_software_version:
+            rerun_changed = False
+            if (rerun_software_name
+                    and terminal_software
+                    and terminal_software != rerun_software_name):
+                rerun_changed = True
+                writer(f"\nucs-detect: software name changed:"
+                       f" \"{rerun_software_name}\""
+                       f" => \"{terminal_software}\"\n")
+            if (rerun_software_version
+                    and terminal_version
+                    and terminal_version != rerun_software_version):
+                rerun_changed = True
+                writer(f"\nucs-detect: software version changed:"
+                       f" \"{rerun_software_version}\""
+                       f" => \"{terminal_version}\"\n")
+            if rerun_changed and not silent:
+                confirm = input('Continue with new values? '
+                                '(press return to accept, or enter new values)\n'
+                                f'  Terminal Software [{terminal_software}]: ')
+                if confirm.strip():
+                    terminal_software = confirm.strip()
+                confirm = input(f'  Software Version [{terminal_version}]: ')
+                if confirm.strip():
+                    terminal_version = confirm.strip()
 
     start_time = time.monotonic()
 
@@ -1168,10 +1196,10 @@ def _apply_rerun_yaml(results):
 
     if not results.get('save_yaml'):
         results['save_yaml'] = yaml_path
-    if not results.get('set_software_name') and data.get('software_name'):
-        results['set_software_name'] = data['software_name']
-    if not results.get('set_software_version') and data.get('software_version'):
-        results['set_software_version'] = data['software_version']
+    # Store the YAML's original name/version for comparison after
+    # auto-detection, rather than overriding auto-detection with them.
+    results['rerun_software_name'] = data.get('software_name', '')
+    results['rerun_software_version'] = data.get('software_version', '')
 
     return results
 

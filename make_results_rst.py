@@ -1526,7 +1526,8 @@ def show_vs_results(sw_name, entry, variation_str):
         failure_record = failed_codepoints[len(failed_codepoints) // 2]
         description = 'NARROW Emoji made WIDE' if variation_str == '16' else 'WIDE Emoji made NARROW'
         whatis = f"of a {description} by *Variation Selector-{variation_str}*,"
-        show_record_failure(sw_name, whatis, failure_record)
+        show_record_failure(sw_name, whatis, failure_record,
+                            test_type=f"vs{variation_str}")
     print()
 
 
@@ -1874,7 +1875,7 @@ def show_time_elapsed_results(sw_name, entry):
     print(f"selectors, language support checks, and DEC mode detection.")
     print()
 
-def show_record_failure(sw_name, whatis, fail_record):
+def show_record_failure(sw_name, whatis, fail_record, test_type=None):
     num_bars = "1234567890" * ((fail_record["measured_by_wcwidth"] // 10) + 1)
     ruler = num_bars[: fail_record["measured_by_wcwidth"]]
     wchars = fail_record.get("wchar", fail_record.get("wchars"))
@@ -1895,10 +1896,23 @@ def show_record_failure(sw_name, whatis, fail_record):
               " where no movement is expected.")
     elif "measured_by_terminal" in fail_record and (
             fail_record["measured_by_wcwidth"] != fail_record["measured_by_terminal"]):
-        print(f"- python `wcwidth.wcswidth()`_ measures width"
-              f" {fail_record['measured_by_wcwidth']},")
-        print(f"  while *{sw_name}* measures width"
-              f" {fail_record['measured_by_terminal']}.")
+        if test_type == "vs15":
+            print(f"- The expected width for VS-15 is"
+                  f" {fail_record['measured_by_wcwidth']},"
+                  f" while *{sw_name}* measures width"
+                  f" {fail_record['measured_by_terminal']}.")
+            print(f"  python `wcwidth.wcswidth()`_ currently returns"
+                  f" {fail_record['measured_by_terminal']}"
+                  f" for this sequence — there is"
+                  f" `ongoing discussion"
+                  f" <https://github.com/jquast/wcwidth/issues/211>`_"
+                  f" about whether it should return"
+                  f" {fail_record['measured_by_wcwidth']}.")
+        else:
+            print(f"- python `wcwidth.wcswidth()`_ measures width"
+                  f" {fail_record['measured_by_wcwidth']},")
+            print(f"  while *{sw_name}* measures width"
+                  f" {fail_record['measured_by_terminal']}.")
     print()
 
 
