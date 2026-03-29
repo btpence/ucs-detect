@@ -17,8 +17,8 @@ session_arguments:
   limit_graphemes: 0
   limit_graphemes_pct: 0
   stream: stderr
-software_name: ''
-software_version: ''
+software_name: tabby
+software_version: 1.0.230
 system: Linux
 terminal_results:
   background_color_hex: '#000000000000'

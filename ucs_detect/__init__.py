@@ -223,22 +223,32 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
         if set_software_name:
             terminal_software = set_software_name
         elif silent or not verify_software_name_and_version:
-            terminal_software = auto_name
+            terminal_software = auto_name or rerun_software_name
         elif auto_name:
             terminal_software = input(f'Enter "Terminal Software" (press return for "{auto_name}"): ')
             if not terminal_software.strip():
                 terminal_software = auto_name
+        elif rerun_software_name:
+            terminal_software = input(
+                f'Enter "Terminal Software" (press return for "{rerun_software_name}"): ')
+            if not terminal_software.strip():
+                terminal_software = rerun_software_name
         else:
             terminal_software = input('Enter "Terminal Software": ')
 
         if set_software_version:
             terminal_version = set_software_version
         elif silent or not verify_software_name_and_version:
-            terminal_version = auto_version
+            terminal_version = auto_version or rerun_software_version
         elif auto_version:
             terminal_version = input(f'Enter "Software Version" (press return for "{auto_version}"): ')
             if not terminal_version.strip():
                 terminal_version = auto_version
+        elif rerun_software_version:
+            terminal_version = input(
+                f'Enter "Software Version" (press return for "{rerun_software_version}"): ')
+            if not terminal_version.strip():
+                terminal_version = rerun_software_version
         else:
             terminal_version = input('Enter "Software Version": ')
 

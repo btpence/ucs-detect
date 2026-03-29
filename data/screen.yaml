@@ -17,8 +17,8 @@ session_arguments:
   limit_graphemes: 0
   limit_graphemes_pct: 0
   stream: stderr
-software_name: ''
-software_version: ''
+software_name: screen
+software_version: 4.09.01
 system: Linux
 terminal_results:
   device_attributes:

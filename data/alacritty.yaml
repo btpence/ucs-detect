@@ -17,8 +17,8 @@ session_arguments:
   limit_graphemes: 5000
   limit_graphemes_pct: 0
   stream: stderr
-software_name: ''
-software_version: ''
+software_name: alacritty
+software_version: 0.16.1
 system: Linux
 terminal_results:
   background_color_hex: '#181818181818'
