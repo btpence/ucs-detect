@@ -1631,9 +1631,12 @@ def show_software_header(entry, sw_name, terminal_mixins):
     print()
     print(f'Tested Software version {entry["terminal_software_version"]} on {entry["os_system"]}.')
 
-    # Look up homepage URL from terminal_mixins (case-insensitive)
+    # Look up homepage URL and description from terminal_mixins (case-insensitive)
     sw_name_lower = entry["terminal_software_name"].lower()
     if sw_name_lower in terminal_mixins:
+        description = terminal_mixins[sw_name_lower].get('description')
+        if description:
+            print(f'{description}')
         homepage = terminal_mixins[sw_name_lower].get('homepage')
         if homepage:
             print(f'The homepage URL of this terminal is {homepage}.')

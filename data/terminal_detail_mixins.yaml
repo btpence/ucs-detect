@@ -88,8 +88,9 @@ terminals:
     homepage: https://github.com/tmux/tmux
     sixel_support_notes: "Must be compiled with sixel support. Check support and enablement with command: ``(tmux show-options -g;tmux show-window-options)|grep -i sixel``"
 
-  vscode terminal:
+  xterm.js:
     homepage: https://code.visualstudio.com/docs/terminal/basics
+    description: "The xterm.js variant tested is the one shipped with Visual Studio Code's integrated terminal."
     sixel_support_notes: "Must be enabled with ``\"terminal.integrated.enableImages\": true``."
 
   weston-terminal:
