@@ -89,6 +89,7 @@ def merge_results(base_results, additional_results):
 
 
 def init_term(stream):
+    """Initialize terminal and writer."""
     locale.setlocale(locale.LC_ALL, "")
     # local
     from ucs_detect.terminal import make_terminal
@@ -438,6 +439,7 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
 
 
 def display_args(arguments):
+    """Format arguments as comma-separated key=value string."""
     return ", ".join(f"{k}={v}" for k, v in arguments.items())
 
 
@@ -1014,6 +1016,7 @@ def _save_results(save_yaml, save_json, **kwargs):
 
 
 def do_save_yaml(save_yaml, **kwargs):
+    """Save results to a YAML file."""
     # Ensure software_version is always stored as a string in YAML,
     # otherwise yaml.safe_dump serializes "3.5" as a float.
     if 'software_version' in kwargs:
@@ -1028,6 +1031,7 @@ def do_save_yaml(save_yaml, **kwargs):
 
 
 def do_save_json(save_json, **kwargs):
+    """Save results to a JSON file."""
     if 'software_version' in kwargs:
         kwargs['software_version'] = str(kwargs['software_version'])
     with open(save_json, "w", encoding='utf-8') as fout:
@@ -1036,6 +1040,7 @@ def do_save_json(save_json, **kwargs):
 
 
 def parse_args():
+    """Parse command-line arguments."""
     args = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     args.add_argument(
         "--stream",
@@ -1251,6 +1256,7 @@ def _apply_rerun_yaml(results):
 
 
 def main():
+    """CLI entry point."""
     sys.exit(run(**parse_args()))
 
 

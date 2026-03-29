@@ -1,3 +1,4 @@
+"""Terminal detection and capability utilities."""
 # std imports
 import os
 import re
@@ -15,8 +16,7 @@ SCREEN_RATIOS = [(4, 3), (16, 9), (16, 10), (21, 9), (32, 9)]
 
 def make_terminal(fallback_kind="ansi", **kwargs):
     """
-    Create a :class:`blessed.Terminal`, falling back to *fallback_kind* when ``curses.setupterm()``
-    fails for the current ``$TERM``.
+    Create a :class:`blessed.Terminal`, falling back to *fallback_kind*.
 
     The ``syncterm`` termcap is also overridden to *fallback_kind* --
     syncterm termcap has trouble with blessed+curses even when installed,
@@ -54,6 +54,7 @@ def _status(writer, term, label, bg_rgb=None, silent=False):
 
 
 def maybe_grapheme_clustering_mode(term, timeout=1.0):
+    """Check if grapheme clustering mode is enabled."""
     return term.dec_modes_enabled(term.DecPrivateMode.GRAPHEME_CLUSTERING, timeout=timeout)
 
 
@@ -73,6 +74,7 @@ def _nearest_fraction(numerator: int, denominator: int, fractions: list[tuple[in
 
 
 def get_tty_size(term, writer):
+    """Return terminal dimensions in characters and pixels."""
     return {
         'width': term.width,
         'height': term.height,
@@ -132,6 +134,7 @@ def maybe_determine_dec_modes(term, writer, all_modes=False, bg_rgb=None,
 
 
 def maybe_determine_da_and_sixel(term, timeout=1.0):
+    """Query device attributes and sixel support."""
     result = {}
     da = term.get_device_attributes(timeout=timeout)
 
@@ -216,6 +219,7 @@ def _try_decode_da3_name(name):
 
 
 def maybe_determine_software(term, writer, timeout=1.0):
+    """Query terminal software name and version."""
     result = {}
     sv = term.get_software_version(timeout=timeout)
     if sv is not None:
@@ -270,6 +274,7 @@ def maybe_determine_software(term, writer, timeout=1.0):
 
 
 def maybe_determine_cell_size(term, writer, timeout=1.0):
+    """Query terminal cell dimensions in pixels."""
     cell_height, cell_width = term.get_cell_height_and_width(timeout=timeout)
     if cell_height != -1 and cell_width != -1:
         return {"cell_height": cell_height, "cell_width": cell_width}
@@ -277,6 +282,7 @@ def maybe_determine_cell_size(term, writer, timeout=1.0):
 
 
 def maybe_determine_pixel_size(term, writer, timeout=1.0):
+    """Query terminal pixel dimensions via sixel geometry."""
     pixel_height, pixel_width = term.get_sixel_height_and_width(timeout=timeout)
     if pixel_height > 0 and pixel_width > 0:
         return {"pixels_height": pixel_height, "pixels_width": pixel_width}
@@ -284,6 +290,7 @@ def maybe_determine_pixel_size(term, writer, timeout=1.0):
 
 
 def maybe_determine_screen_ratio(attrs):
+    """Determine screen aspect ratio from pixel dimensions."""
     MATCHING_SCREEN_RATIOS = {'4:3': 'VGA', '16:9': 'HD', '16:10': 'WSXGA', '21:9': 'UWHD', '32:9': 'WQHD'}
     if attrs.get('pixels_width', 0) and attrs.get('pixels_height', 0):
         screen_ratio = ':'.join(map(str, _nearest_fraction(attrs['pixels_width'], attrs['pixels_height'], SCREEN_RATIOS)))
@@ -426,6 +433,7 @@ def _timed_detect(func, *args, cps_tracker=None, **kwargs):
 def do_terminal_detection(all_modes=False, cursor_report_delay_ms=0,
                           timeout=1.0, cps_tracker=None, has_unicode=True,
                           silent=False):
+    """Detect terminal capabilities and return results as a dict."""
     writer = functools.partial(print, end="", flush=True, file=sys.stderr)
     term = make_terminal()
     attrs = {'ttype': term.kind, 'number_of_colors': term.number_of_colors}

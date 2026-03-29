@@ -1,3 +1,4 @@
+"""Terminal Unicode width measurement utilities."""
 # std
 # std imports
 import os
@@ -49,6 +50,7 @@ class CPSTracker:
     """Track average codepoints-per-second across test categories."""
 
     def __init__(self):
+        """Initialize tracker with zero counts."""
         self._total_items = 0
         self._total_elapsed = 0.0
         self._min_response_time = float('inf')
@@ -198,7 +200,7 @@ def extract_unique_graphemes(text):
 
 
 def get_location_with_retry(term, timeout, max_retries=3):
-    """Wrapper around term.get_location() that retries on false timeouts from VM clock skew."""
+    """Wrap term.get_location() with retries for false timeouts from VM clock skew."""
     for attempt in range(max_retries):
         start = time.monotonic()
         ypos, xpos = term.get_location(timeout=timeout)
@@ -321,6 +323,7 @@ def test_language_support(
     bg_rgb=None,
     **_kwargs,
 ):
+    """Test terminal support for language graphemes."""
     success_report = collections.defaultdict(int)
     failure_report = collections.defaultdict(list)
     time_report = {}
@@ -571,6 +574,7 @@ def wchar_to_str(wchar):
 
 
 def exit_and_display_timeout_error(term, writer, timeout, **_kwargs):
+    """Display timeout error and exit."""
     writer("\n" + term.reverse_red(f"Timeout Exceeded ({timeout:.1f}s)") + "\n")
     sys.exit(1)
 
@@ -620,6 +624,7 @@ def test_support(
     silent=False,
     bg_rgb=None,
 ):
+    """Test terminal support for a Unicode character table."""
     success_report = collections.defaultdict(int)
     failure_report = collections.defaultdict(list)
     time_report = {}
@@ -867,10 +872,12 @@ def test_support(
 
 
 def make_success_pct(n_errors, n_total):
+    """Calculate success percentage from error and total counts."""
     return ((n_total - n_errors) / n_total if n_total else 0) * 100
 
 
 def parse_udhr():
+    """Parse UDHR text files into language grapheme data."""
     path_udhr = os.path.join(os.path.dirname(__file__), 'udhr')
     for fname in sorted(os.listdir(path_udhr)):
         if not fname.lower().endswith('.txt'):

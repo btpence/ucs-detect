@@ -651,6 +651,10 @@ def format_score_int(score):
 def _truncate_version(version):
     """Truncate version string at first '-', appending ellipsis if truncated."""
     version = str(version) if version is not None else ""
+    # Strip non-printable characters (e.g. ESC from terminal response strings)
+    # and trailing backslashes which break RST table formatting
+    version = ''.join(ch for ch in version if ch.isprintable())
+    version = version.rstrip('\\')
     if '-' in version:
         return version.split('-', 1)[0] + '\u2026'
     return version
@@ -731,8 +735,8 @@ def display_tabulated_scores(score_table):
     display_title("Results", 1)
 
     # Introduction and disclaimer
-    print("This is a volunteer-maintained analysis created by and for terminal emulator and ")
-    print("TUI/CLI library developers. ")
+    print("This is a volunteer-maintained analysis created by and for terminal emulator and")
+    print("TUI/CLI library developers.")
     print()
     print("We welcome productive contributions and corrections to improve the accuracy and")
     print("completeness of these measurements.")

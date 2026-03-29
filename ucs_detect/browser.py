@@ -148,7 +148,7 @@ def fetch_emoji_variation_sequences():
 
 
 def readline(term, width):
-    """A rudimentary readline implementation."""
+    """Read a line of input from the terminal."""
     text = ''
     while True:
         inp = term.inkey()
@@ -189,11 +189,11 @@ class WcWideCharacterGenerator:
             and (include_uncommon or not _is_uncommon(idx)))
 
     def __iter__(self):
-        """Special method called by iter()."""
+        """Return the iterator object."""
         return self
 
     def __next__(self):
-        """Special method called by next()."""
+        """Return the next item."""
         while True:
             ucs = next(self.characters)
             try:
@@ -229,12 +229,12 @@ class WcCombinedCharacterGenerator:
         self.characters.reverse()
 
     def __iter__(self):
-        """Special method called by iter()."""
+        """Return the iterator object."""
         return self
 
     def __next__(self):
         """
-        Special method called by next().
+        Return the next unicode character and name as a tuple.
 
         :return: unicode character and name, as tuple.
         :rtype: tuple[unicode, unicode]
@@ -323,12 +323,12 @@ class WcVariationSequenceGenerator:
         self.sequences.reverse()
 
     def __iter__(self):
-        """Special method called by iter()."""
+        """Return the iterator object."""
         return self
 
     def __next__(self):
         """
-        Special method called by next().
+        Return the next variation sequence and name as a tuple.
 
         :return: variation sequence and name, as tuple.
         :rtype: tuple[str, str]
@@ -386,11 +386,11 @@ class WcSpaceKludgeGenerator:
         self.sequences.reverse()
 
     def __iter__(self):
-        """Special method called by iter()."""
+        """Return the iterator object."""
         return self
 
     def __next__(self):
-        """Special method called by next()."""
+        """Return the next item."""
         if not self.sequences:
             raise StopIteration
         return self.sequences.pop()
@@ -423,11 +423,11 @@ class WcGraphemeGenerator:
         self._idx = 0
 
     def __iter__(self):
-        """Special method called by iter()."""
+        """Return the iterator object."""
         return self
 
     def __next__(self):
-        """Special method called by next()."""
+        """Return the next item."""
         if self._idx >= len(self.graphemes):
             raise StopIteration
         result = self.graphemes[self._idx]
@@ -449,11 +449,11 @@ class WcZwjGenerator:
         self._idx = 0
 
     def __iter__(self):
-        """Special method called by iter()."""
+        """Return the iterator object."""
         return self
 
     def __next__(self):
-        """Special method called by next()."""
+        """Return the next item."""
         if self._idx >= len(self.sequences):
             raise StopIteration
         result = self.sequences[self._idx]
@@ -574,6 +574,7 @@ class Screen:
 
 class Pager:
     """A less(1)-like browser for browsing unicode characters."""
+
     # pylint: disable=too-many-instance-attributes
 
     #: screen state for next draw method(s).
@@ -1013,7 +1014,7 @@ class Pager:
 
     def page_view(self, data):
         """
-        Generator yields text for the current unicode pageview.
+        Generate text for the current unicode pageview.
 
         :param list[(unicode, unicode)] data: current page data as
             tuple of ``(ucs, name)``.
