@@ -17,8 +17,8 @@ session_arguments:
   limit_graphemes: 0
   limit_graphemes_pct: 0
   stream: stderr
-software_name: ''
-software_version: ''
+software_name: PuTTY
+software_version: '0.81'
 system: Linux
 terminal_results:
   device_attributes:
