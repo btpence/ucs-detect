@@ -379,7 +379,7 @@ General Tabulated Summary
 Common Language support
 -----------------------
 
-The following languages were successfull
+The following languages were successful
 with all terminals emulators tested,
 and will not be reported:
 

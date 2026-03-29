@@ -1162,7 +1162,7 @@ def show_wchar(wchar):
 def display_common_languages(all_successful_languages):
     if all_successful_languages:
         display_title("Common Language support", 2)
-        print("The following languages were successfull")
+        print("The following languages were successful")
         print("with all terminals emulators tested,")
         print("and will not be reported:")
         print()
