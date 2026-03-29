@@ -42,6 +42,9 @@ from ucs_detect.table_lang import LANG_GRAPHEMES
 from ucs_detect.table_vs15 import VS15_WIDE_TO_NARROW
 from ucs_detect.table_vs16 import VS16_NARROW_TO_WIDE
 from ucs_detect.table_wide import WIDE_CHARACTERS
+from ucs_detect.table_sri import STANDALONE_REGIONAL_INDICATORS
+from ucs_detect.table_sfz import STANDALONE_FITZPATRICK
+from ucs_detect.table_ri import REGIONAL_INDICATOR_FLAGS
 from ucs_detect.error_matcher import ErrorMatcher
 
 
@@ -269,6 +272,9 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
     start_time = time.monotonic()
 
     wide_results = {}
+    sri_results = {}
+    sfz_results = {}
+    ri_results = {}
     emoji_zwj_results = {}
     emoji_vs16_results = {}
     emoji_vs15_results = {}
@@ -295,6 +301,33 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
                     test_type="wide", label="WIDE",
                     limit_pct=limit_codepoints_wide_pct,
                     include_uncommon=include_uncommon_codepoints,
+                    **test_kwargs,
+                )
+
+            if _should_run("unicode", "sri"):
+                sri_results = measure.test_support(
+                    table=STANDALONE_REGIONAL_INDICATORS,
+                    expected_width=2,
+                    test_type="sri",
+                    label="Standalone Regional Indicators",
+                    **test_kwargs,
+                )
+
+            if _should_run("unicode", "sfz"):
+                sfz_results = measure.test_support(
+                    table=STANDALONE_FITZPATRICK,
+                    expected_width=2,
+                    test_type="sfz",
+                    label="Standalone Fitzpatrick",
+                    **test_kwargs,
+                )
+
+            if _should_run("unicode", "ri"):
+                ri_results = measure.test_support(
+                    table=REGIONAL_INDICATOR_FLAGS,
+                    expected_width=2,
+                    test_type="ri",
+                    label="Regional Indicator Flags",
                     **test_kwargs,
                 )
 
@@ -363,6 +396,9 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
             term, writer, ambig_label,
             terminal_results=terminal_results,
             wide_results=wide_results,
+            sri_results=sri_results,
+            sfz_results=sfz_results,
+            ri_results=ri_results,
             emoji_zwj_results=emoji_zwj_results,
             emoji_vs16_results=emoji_vs16_results,
             emoji_vs15_results=emoji_vs15_results,
@@ -388,6 +424,9 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
             cps_summary=cps_tracker.summary(),
             test_results=dict(
                 unicode_wide_results=wide_results,
+                sri_results=sri_results,
+                sfz_results=sfz_results,
+                ri_results=ri_results,
                 emoji_zwj_results=emoji_zwj_results,
                 emoji_vs16_results=emoji_vs16_results,
                 emoji_vs15_results=emoji_vs15_results,
@@ -623,11 +662,16 @@ def _build_test_kv_pairs(term, ambig_label, **result_sets):
     pairs = []
 
     wide = result_sets.get("wide_results", {})
+    sri = result_sets.get("sri_results", {})
+    sfz = result_sets.get("sfz_results", {})
+    ri = result_sets.get("ri_results", {})
     zwj = result_sets.get("emoji_zwj_results", {})
     vs16 = result_sets.get("emoji_vs16_results", {})
     vs15 = result_sets.get("emoji_vs15_results", {})
 
-    for name, data in [("WIDE", wide), ("ZWJ", zwj), ("VS16", vs16), ("VS15", vs15)]:
+    for name, data in [("WIDE", wide), ("Standalone RI", sri),
+                       ("Standalone Fitz.", sfz), ("RI Flags", ri),
+                       ("ZWJ", zwj), ("VS16", vs16), ("VS15", vs15)]:
         if data:
             for label, d in data.items():
                 pct_val = d["pct_success"]
@@ -1088,14 +1132,16 @@ def parse_args():
         default=None,
         help=(
             "Interactively stop and display details when matching errors occur. "
-            "Values: 'all' (any error), 'zwj', 'wide', 'vs16', 'vs16n', 'vs15', "
+            "Values: 'all' (any error), 'zwj', 'wide', 'sri', 'sfz', 'ri', "
+            "'vs16', 'vs16n', 'vs15', "
             "'lang' (all languages), or specific language name (e.g., 'english')"
         )
     )
     args.add_argument(
         "--test-only",
         default="all",
-        choices=("all", "unicode", "terminal", "wide", "zwj", "vs16", "vs15", "lang"),
+        choices=("all", "unicode", "terminal", "wide", "sri", "sfz",
+                 "ri", "zwj", "vs16", "vs15", "lang"),
         help="Run only the specified test category",
     )
     args.add_argument(

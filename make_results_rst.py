@@ -81,6 +81,7 @@ def generate_score_css():
         class_name = make_score_css_class(score)
         css_lines.append(f'.{class_name} {{ background-color: rgb({r}, {g}, {b}); }}')
     css_lines.append('.score-contested { background-color: rgb(220, 220, 220); }')
+    css_lines.append('.score-na { background-color: rgb(220, 220, 220); }')
     return '\n'.join(css_lines)
 
 
@@ -144,6 +145,12 @@ def _wrap_vs15_contested(text, terminal_name):
     """Wrap VS-15 score with contested (grey) styling and hyperlink."""
     link_target = make_link(terminal_name + "_vs15")
     return f':sref:`{text} <{link_target}> contested`'
+
+
+def _wrap_untested(terminal_name, section_suffix):
+    """Wrap untested score with grey styling and hyperlink."""
+    link_target = make_link(terminal_name + section_suffix)
+    return f':sref:`N/A <{link_target}> contested`'
 
 
 def wrap_time_with_hyperlink(text, score, elapsed_seconds, terminal_name, section_suffix):
@@ -210,7 +217,7 @@ def create_score_plots(sw_name, entry, score_table):
         List of all score entries for comparison
     """
     # Collect all scores for comparison
-    metrics = ['WIDE', 'ZWJ', 'LANG', 'VS16', 'CAP', 'GFX', 'TIME']
+    metrics = ['WIDE', 'ZWJ', 'LANG', 'VS16', 'SRI', 'SFZ', 'RI', 'CAP', 'GFX', 'TIME']
     terminal_scores_scaled = {}
     all_scores_scaled = {}
 
@@ -221,6 +228,9 @@ def create_score_plots(sw_name, entry, score_table):
         'LANG': 'score_language',
         'VS16': 'score_emoji_vs16',
         'VS15': 'score_emoji_vs15',
+        'SRI': 'score_sri',
+        'SFZ': 'score_sfz',
+        'RI': 'score_ri',
         'CAP': 'score_capabilities',
         'GFX': 'score_graphics',
         'TIME': 'score_elapsed',
@@ -449,6 +459,15 @@ def make_score_table():
             # 'EMOJI ZWJ',
             _score_zwj = score_zwj(data)
 
+            # 'SRI' (Standalone Regional Indicators),
+            _score_sri = score_sri(data)
+
+            # 'SFZ' (Standalone Fitzpatrick),
+            _score_sfz = score_sfz(data)
+
+            # 'RI' (Regional Indicator Flags),
+            _score_ri = score_ri(data)
+
             # 'EMOJI VS-16',
             _vs16_base = data["test_results"].get("emoji_vs16_results", {})
             if _vs16_base and "9.0.0" in _vs16_base:
@@ -492,6 +511,9 @@ def make_score_table():
                     os_system=data["system"],
                     score_emoji_vs16=score_emoji_vs16,
                     score_emoji_vs15=score_emoji_vs15,
+                    score_sri=_score_sri,
+                    score_sfz=_score_sfz,
+                    score_ri=_score_ri,
                     score_dec_modes=_score_dec_modes,
                     score_elapsed=_score_elapsed,
                     elapsed_seconds=_elapsed_seconds,
@@ -561,6 +583,9 @@ def make_score_table():
             # see https://github.com/jquast/wcwidth/issues/211
             (entry["score_zwj"], 1.0),
             (entry["score_wide"], 1.0),
+            (entry["score_sri"], 1.0),
+            (entry["score_sfz"], 1.0),
+            (entry["score_ri"], 1.0),
             (entry["score_capabilities"], 1.0),
             (entry["score_graphics"], 1.0),
             (entry["score_elapsed_norm"], TIME_WEIGHT)
@@ -778,6 +803,27 @@ def display_tabulated_scores(score_table):
                     format_score_int(result["score_emoji_vs15_scaled"]),
                     result["terminal_software_name"],
                 ),
+                "SRI": (wrap_score_with_hyperlink(
+                    format_score_int(result["score_sri_scaled"]),
+                    result["score_sri_scaled"],
+                    result["terminal_software_name"],
+                    "_sri"
+                ) if not math.isnan(result["score_sri_scaled"])
+                    else _wrap_untested(result["terminal_software_name"], "_sri")),
+                "SFZ": (wrap_score_with_hyperlink(
+                    format_score_int(result["score_sfz_scaled"]),
+                    result["score_sfz_scaled"],
+                    result["terminal_software_name"],
+                    "_sfz"
+                ) if not math.isnan(result["score_sfz_scaled"])
+                    else _wrap_untested(result["terminal_software_name"], "_sfz")),
+                "RI": (wrap_score_with_hyperlink(
+                    format_score_int(result["score_ri_scaled"]),
+                    result["score_ri_scaled"],
+                    result["terminal_software_name"],
+                    "_ri"
+                ) if not math.isnan(result["score_ri_scaled"])
+                    else _wrap_untested(result["terminal_software_name"], "_ri")),
                 "Capabilities": capabilities_list,
                 "Graphics": _format_graphics_protocols(result, result["terminal_software_name"]),
             }
@@ -795,7 +841,7 @@ def display_table_definitions():
     print("Definitions:\n")
     print(
         "- *FINAL score*: The overall terminal emulator quality score, calculated as\n"
-        "  the weighted average of all feature scores (WIDE, LANG, ZWJ, VS16,\n"
+        "  the weighted average of all feature scores (WIDE, LANG, ZWJ, VS16, SRI, SFZ, RI,\n"
         "  DEC Modes, and TIME), then scaled (normalized 0-100%) relative to all terminals tested.\n"
         "  Note: VS15 is excluded from the final score — its interpretation is contested.\n"
         "  Higher scores indicate better overall Unicode and terminal feature support. DEC Modes and\n"
@@ -828,6 +874,21 @@ def display_table_definitions():
         "  See `jquast/wcwidth#211 <https://github.com/jquast/wcwidth/issues/211>`_."
     )
     print(
+        "- *SRI score*: Percentage of standalone Regional Indicator symbols\n"
+        "  (U+1F1E6-U+1F1FF) correctly displayed as wide (2-cell) characters\n"
+        "  when not paired as flag sequences."
+    )
+    print(
+        "- *SFZ score*: Percentage of standalone Fitzpatrick skin tone modifiers\n"
+        "  (U+1F3FB-U+1F3FF) correctly displayed as wide (2-cell) characters\n"
+        "  when not combined with a base emoji."
+    )
+    print(
+        "- *RI score*: Percentage of Regional Indicator flag sequences\n"
+        "  (country and subdivision flags) correctly displayed as wide (2-cell)\n"
+        "  characters. Sourced from the Unicode emoji-test.txt specification."
+    )
+    print(
         "- *Mode 2027*: DEC Mode 2027 (GRAPHEME_CLUSTERING) support. Shows 'enabled'\n"
         "  if the mode is currently enabled, 'may enable' if the mode is supported but\n"
         "  not enabled and can be changed to enabled, or 'no' if not supported.\n"
@@ -849,9 +910,9 @@ def scale_scores(score_table, entry, key):
     if math.isnan(my_score):
         return float('NaN')
 
-    # VS16, VS15, Sixel, and Graphics are not scaled - return raw score
-    if key in ('score_emoji_vs16', 'score_emoji_vs15', 'score_sixel',
-               'score_graphics'):
+    # VS16, VS15, SRI, SFZ, RI, Sixel, and Graphics are not scaled - return raw score
+    if key in ('score_emoji_vs16', 'score_emoji_vs15', 'score_sri',
+               'score_sfz', 'score_ri', 'score_sixel', 'score_graphics'):
         return my_score
 
     valid_scores = [_entry[key] for _entry in score_table if not math.isnan(_entry[key])]
@@ -890,6 +951,42 @@ def score_wide(data):
     if not wide_results:
         return 0.0
     result = next(iter(wide_results.values()))
+    n_total = result["n_total"]
+    if n_total == 0:
+        return 0.0
+    return (n_total - result["n_errors"]) / n_total
+
+
+def score_sri(data):
+    """Calculate SRI score as percentage of standalone regional indicators tested."""
+    sri_results = data["test_results"].get("sri_results") or {}
+    if not sri_results:
+        return float('NaN')
+    result = next(iter(sri_results.values()))
+    n_total = result["n_total"]
+    if n_total == 0:
+        return 0.0
+    return (n_total - result["n_errors"]) / n_total
+
+
+def score_sfz(data):
+    """Calculate SFZ score as percentage of standalone Fitzpatrick modifiers tested."""
+    sfz_results = data["test_results"].get("sfz_results") or {}
+    if not sfz_results:
+        return float('NaN')
+    result = next(iter(sfz_results.values()))
+    n_total = result["n_total"]
+    if n_total == 0:
+        return 0.0
+    return (n_total - result["n_errors"]) / n_total
+
+
+def score_ri(data):
+    """Calculate RI score as percentage of Regional Indicator flag sequences tested."""
+    ri_results = data["test_results"].get("ri_results") or {}
+    if not ri_results:
+        return float('NaN')
+    result = next(iter(ri_results.values()))
     n_total = result["n_total"]
     if n_total == 0:
         return 0.0
@@ -1232,18 +1329,36 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
         },
         {
             "#": 6,
+            "Score Type": make_outbound_hyperlink("SRI", sw_name + "_sri"),
+            "Raw Score": format_raw_score(entry["score_sri"]),
+            "Final Scaled Score": format_score_pct(entry["score_sri_scaled"]),
+        },
+        {
+            "#": 7,
+            "Score Type": make_outbound_hyperlink("SFZ", sw_name + "_sfz"),
+            "Raw Score": format_raw_score(entry["score_sfz"]),
+            "Final Scaled Score": format_score_pct(entry["score_sfz_scaled"]),
+        },
+        {
+            "#": 8,
+            "Score Type": make_outbound_hyperlink("RI", sw_name + "_ri"),
+            "Raw Score": format_raw_score(entry["score_ri"]),
+            "Final Scaled Score": format_score_pct(entry["score_ri_scaled"]),
+        },
+        {
+            "#": 9,
             "Score Type": make_outbound_hyperlink("Capabilities", sw_name + "_dec_modes"),
             "Raw Score": format_raw_score(entry["score_capabilities"]),
             "Final Scaled Score": format_score_pct(entry["score_capabilities_scaled"]),
         },
         {
-            "#": 7,
+            "#": 10,
             "Score Type": make_outbound_hyperlink("Graphics", sw_name + "_graphics"),
             "Raw Score": f"{entry['score_graphics']*100:.0f}%",
             "Final Scaled Score": format_score_pct(entry["score_graphics_scaled"]),
         },
         {
-            "#": 8,
+            "#": 11,
             "Score Type": make_outbound_hyperlink("TIME", sw_name + "_time"),
             "Raw Score": f"{entry['elapsed_seconds']:.2f}s" if not math.isnan(entry['elapsed_seconds']) else "N/A",
             "Final Scaled Score": format_score_pct(entry["score_elapsed_scaled"]),
@@ -1268,14 +1383,16 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
     print(f"**Final Scaled Score Calculation:**")
     print()
     print(f"- Raw Final Score: {format_raw_score(entry['score_final'])}")
-    print(f"  (weighted average: WIDE + ZWJ + LANG + VS16 + CAP + GFX + 0.5*TIME)")
-    print(f"  the categorized 'average' absolute support level of this terminal")
-    print(f"  Note: TIME is normalized to 0-1 range before averaging.")
-    print(f"  TIME is weighted at 0.5 (half as powerful as other metrics).")
-    print(f"  CAP (Capabilities) is the fraction of 7 notable capabilities supported.")
-    print(f"  GFX (Graphics) scores 100% for modern protocols (iTerm2, Kitty),")
-    print(f"  50% for legacy only (Sixel, ReGIS), 0% for none.")
-    print(f"  Sixel/ReGIS support contributes to the GFX score at 50%.")
+    print(f"  (weighted average: WIDE + ZWJ + LANG + VS16 + SRI + SFZ + RI + CAP + GFX + 0.5*TIME)")
+    print(f"  the categorized 'average' absolute support level of this terminal.")
+    print()
+    print(f"  .. note::")
+    print()
+    print(f"     TIME is normalized to 0-1 range before averaging.")
+    print(f"     TIME is weighted at 0.5 (half as powerful as other metrics).")
+    print(f"     CAP (Capabilities) is the fraction of notable capabilities supported.")
+    print(f"     GFX (Graphics) scores 100% for modern protocols (iTerm2, Kitty),")
+    print(f"     50% for legacy only (Sixel, ReGIS), 0% for none.")
     print()
     print(f"- Final Scaled Score: {format_score_pct(entry['score_final_scaled'])}")
     print(f"  (normalized across all terminals tested).")
@@ -1354,6 +1471,60 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
         print(f"- Result: {entry['score_emoji_vs15']*100:.2f}%")
     else:
         print(f"VS15 results not available.")
+    print()
+
+    _UNTESTED_NOTE = ("This terminal has not yet been tested with the latest version "
+                       "of ucs-detect. This score is excluded from the final score.")
+
+    print(f"**SRI Score Details:**")
+    print()
+    sri_results = entry["data"]["test_results"].get("sri_results") or {}
+    if sri_results:
+        result = next(iter(sri_results.values()))
+        n_total = result["n_total"]
+        n_success = n_total - result["n_errors"]
+        print(f"Standalone Regional Indicator support calculation:")
+        print()
+        print(f"- Total successful codepoints: {n_success}")
+        print(f"- Total codepoints tested: {n_total}")
+        print(f"- Formula: {n_success} / {n_total}")
+        print(f"- Result: {entry['score_sri']*100:.2f}%")
+    else:
+        print(f".. note:: {_UNTESTED_NOTE}")
+    print()
+
+    print(f"**SFZ Score Details:**")
+    print()
+    sfz_results = entry["data"]["test_results"].get("sfz_results") or {}
+    if sfz_results:
+        result = next(iter(sfz_results.values()))
+        n_total = result["n_total"]
+        n_success = n_total - result["n_errors"]
+        print(f"Standalone Fitzpatrick skin tone modifier support calculation:")
+        print()
+        print(f"- Total successful codepoints: {n_success}")
+        print(f"- Total codepoints tested: {n_total}")
+        print(f"- Formula: {n_success} / {n_total}")
+        print(f"- Result: {entry['score_sfz']*100:.2f}%")
+    else:
+        print(f".. note:: {_UNTESTED_NOTE}")
+    print()
+
+    print(f"**RI Score Details:**")
+    print()
+    ri_results = entry["data"]["test_results"].get("ri_results") or {}
+    if ri_results:
+        result = next(iter(ri_results.values()))
+        n_total = result["n_total"]
+        n_success = n_total - result["n_errors"]
+        print(f"Regional Indicator flag sequence support calculation:")
+        print()
+        print(f"- Total successful sequences: {n_success}")
+        print(f"- Total sequences tested: {n_total}")
+        print(f"- Formula: {n_success} / {n_total}")
+        print(f"- Result: {entry['score_ri']*100:.2f}%")
+    else:
+        print(f".. note:: {_UNTESTED_NOTE}")
     print()
 
     print(f"**Capabilities Score Details:**")

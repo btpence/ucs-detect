@@ -132,3 +132,4 @@ dmypy.json
 *.bak
 
 data/emoji-zwj-sequences-latest.txt
+data/emoji-test-latest.txt
