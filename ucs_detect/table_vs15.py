@@ -1,5 +1,9 @@
+# Found 158 VS15 wide-to-narrow sequences
+# Found 4 CJK sequences
 # VS-15 table for testing emoji variation sequences
-# Per wcwidth specification, all sequences should narrow to width=1 after VS-15
+# Sourced from Unicode emoji-variation-sequences.txt
+# Only includes characters that are wide by default (wcwidth=2)
+# and should become narrow (width=1) when followed by VS15 (U+FE0E)
 
 VS15_WIDE_TO_NARROW = (
     ('9.0.0', (

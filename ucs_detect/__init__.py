@@ -37,14 +37,14 @@ import prettytable
 
 # local
 from ucs_detect import measure, terminal
+from ucs_detect.table_ri import REGIONAL_INDICATOR_FLAGS
+from ucs_detect.table_sfz import STANDALONE_FITZPATRICK
+from ucs_detect.table_sri import STANDALONE_REGIONAL_INDICATORS
 from ucs_detect.table_zwj import EMOJI_ZWJ_SEQUENCES
 from ucs_detect.table_lang import LANG_GRAPHEMES
 from ucs_detect.table_vs15 import VS15_WIDE_TO_NARROW
 from ucs_detect.table_vs16 import VS16_NARROW_TO_WIDE
 from ucs_detect.table_wide import WIDE_CHARACTERS
-from ucs_detect.table_sri import STANDALONE_REGIONAL_INDICATORS
-from ucs_detect.table_sfz import STANDALONE_FITZPATRICK
-from ucs_detect.table_ri import REGIONAL_INDICATOR_FLAGS
 from ucs_detect.error_matcher import ErrorMatcher
 
 
