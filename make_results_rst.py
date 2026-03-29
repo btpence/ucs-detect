@@ -80,6 +80,7 @@ def generate_score_css():
         r, g, b = score_to_color(score)
         class_name = make_score_css_class(score)
         css_lines.append(f'.{class_name} {{ background-color: rgb({r}, {g}, {b}); }}')
+    css_lines.append('.score-contested { background-color: rgb(220, 220, 220); }')
     return '\n'.join(css_lines)
 
 
@@ -98,6 +99,10 @@ def generate_score_roles():
     # Add role for N/A scores
     lines.append('.. role:: score-na')
     lines.append('   :class: score-na')
+    lines.append('')
+    # Add role for contested scores (light grey)
+    lines.append('.. role:: score-contested')
+    lines.append('   :class: score-contested')
     lines.append('')
     return '\n'.join(lines)
 
@@ -133,6 +138,12 @@ def wrap_score_with_hyperlink(text, score, terminal_name, section_suffix):
     score_value = round(score * 100) if not math.isnan(score) else 'na'
     link_target = make_link(terminal_name + section_suffix)
     return f':sref:`{text} <{link_target}> {score_value}`'
+
+
+def _wrap_vs15_contested(text, terminal_name):
+    """Wrap VS-15 score with contested (grey) styling and hyperlink."""
+    link_target = make_link(terminal_name + "_vs15")
+    return f':sref:`{text} <{link_target}> contested`'
 
 
 def wrap_time_with_hyperlink(text, score, elapsed_seconds, terminal_name, section_suffix):
@@ -199,7 +210,7 @@ def create_score_plots(sw_name, entry, score_table):
         List of all score entries for comparison
     """
     # Collect all scores for comparison
-    metrics = ['WIDE', 'ZWJ', 'LANG', 'VS16', 'VS15', 'CAP', 'GFX', 'TIME']
+    metrics = ['WIDE', 'ZWJ', 'LANG', 'VS16', 'CAP', 'GFX', 'TIME']
     terminal_scores_scaled = {}
     all_scores_scaled = {}
 
@@ -546,7 +557,8 @@ def make_score_table():
         scores_with_weights = [
             (entry["score_language"], 1.0),
             (entry["score_emoji_vs16"], 1.0),
-            (entry["score_emoji_vs15"], 1.0),
+            # VS-15 excluded from scoring — interpretation is contested,
+            # see https://github.com/jquast/wcwidth/issues/211
             (entry["score_zwj"], 1.0),
             (entry["score_wide"], 1.0),
             (entry["score_capabilities"], 1.0),
@@ -762,11 +774,9 @@ def display_tabulated_scores(score_table):
                     result["terminal_software_name"],
                     "_vs16"
                 ),
-                "VS15": wrap_score_with_hyperlink(
+                "VS15": _wrap_vs15_contested(
                     format_score_int(result["score_emoji_vs15_scaled"]),
-                    result["score_emoji_vs15_scaled"],
                     result["terminal_software_name"],
-                    "_vs15"
                 ),
                 "Capabilities": capabilities_list,
                 "Graphics": _format_graphics_protocols(result, result["terminal_software_name"]),
@@ -785,8 +795,9 @@ def display_table_definitions():
     print("Definitions:\n")
     print(
         "- *FINAL score*: The overall terminal emulator quality score, calculated as\n"
-        "  the weighted average of all feature scores (WIDE, LANG, ZWJ, VS16, VS15,\n"
+        "  the weighted average of all feature scores (WIDE, LANG, ZWJ, VS16,\n"
         "  DEC Modes, and TIME), then scaled (normalized 0-100%) relative to all terminals tested.\n"
+        "  Note: VS15 is excluded from the final score — its interpretation is contested.\n"
         "  Higher scores indicate better overall Unicode and terminal feature support. DEC Modes and\n"
         "  TIME are normalized to 0-1 range before averaging. TIME is weighted at 0.5 (half as\n"
         "  powerful as other metrics) to reduce its impact on the final score."
@@ -812,7 +823,9 @@ def display_table_definitions():
     )
     print(
         "- *VS15 score*: Determined by the number of Emoji using Variation\n"
-        "  Selector-15 supported as narrow characters."
+        "  Selector-15 supported as narrow characters.\n"
+        "  **Excluded from final scoring** — this interpretation is contested.\n"
+        "  See `jquast/wcwidth#211 <https://github.com/jquast/wcwidth/issues/211>`_."
     )
     print(
         "- *Mode 2027*: DEC Mode 2027 (GRAPHEME_CLUSTERING) support. Shows 'enabled'\n"
@@ -1215,7 +1228,7 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
             "#": 5,
             "Score Type": make_outbound_hyperlink("VS15", sw_name + "_vs15"),
             "Raw Score": format_raw_score(entry["score_emoji_vs15"]),
-            "Final Scaled Score": format_score_pct(entry["score_emoji_vs15_scaled"]),
+            "Final Scaled Score": "*(excluded)*",
         },
         {
             "#": 6,
@@ -1255,7 +1268,7 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
     print(f"**Final Scaled Score Calculation:**")
     print()
     print(f"- Raw Final Score: {format_raw_score(entry['score_final'])}")
-    print(f"  (weighted average: WIDE + ZWJ + LANG + VS16 + VS15 + CAP + GFX + 0.5*TIME)")
+    print(f"  (weighted average: WIDE + ZWJ + LANG + VS16 + CAP + GFX + 0.5*TIME)")
     print(f"  the categorized 'average' absolute support level of this terminal")
     print(f"  Note: TIME is normalized to 0-1 range before averaging.")
     print(f"  TIME is weighted at 0.5 (half as powerful as other metrics).")
@@ -1323,7 +1336,7 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
         print(f"VS16 results not available.")
     print()
 
-    print(f"**VS15 Score Details:**")
+    print(f"**VS15 Score Details** *(excluded from final score)*:")
     print()
     vs15_base = entry["data"]["test_results"].get("emoji_vs15_results",
                                                    entry["data"]["test_results"].get("emoji_vs15_type_a_results"))
@@ -1528,6 +1541,22 @@ def show_vs_results(sw_name, entry, variation_str):
         whatis = f"of a {description} by *Variation Selector-{variation_str}*,"
         show_record_failure(sw_name, whatis, failure_record,
                             test_type=f"vs{variation_str}")
+    if variation_str == '15':
+        print()
+        print(".. note::")
+        print()
+        print("   The interpretation of VS-15 (U+FE0E) narrowing Wide Emoji"
+              " is contested.")
+        print("   While this test expects VS-15 to make Wide Emoji Narrow,"
+              " most terminal")
+        print("   emulators do not implement this behavior, and python"
+              " `wcwidth.wcswidth()`_")
+        print("   does not currently return a narrow width for these"
+              " sequences.")
+        print("   Only 2 of 35 terminals tested match this expectation."
+              " This score is")
+        print("   excluded from the final ranking. See `jquast/wcwidth#211"
+              " <https://github.com/jquast/wcwidth/issues/211>`_.")
     print()
 
 
