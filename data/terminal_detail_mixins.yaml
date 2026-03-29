@@ -29,6 +29,9 @@ terminals:
   gnome terminal:
     homepage: https://help.gnome.org/users/gnome-terminal/stable/
 
+  hyper:
+    homepage: https://hyper.is/
+
   iterm2:
     homepage: https://iterm2.com/
 
@@ -38,11 +41,18 @@ terminals:
   konsole:
     homepage: https://apps.kde.org/konsole/
 
+  libvterm:
+    homepage: https://www.leonerd.org.uk/code/libvterm/
+    description: "libvterm tested is the one shipped with vIM when using command, ``:terminal``."
+
   linux fbdev:
     homepage: https://www.kernel.org/doc/Documentation/fb/fbcon.txt
 
   lxterminal:
     homepage: https://github.com/lxde/lxterminal
+
+  mintty:
+    homepage: https://mintty.github.io/
 
   mlterm:
     homepage: https://mlterm.sourceforge.net/
