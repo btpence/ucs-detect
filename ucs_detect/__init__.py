@@ -271,14 +271,26 @@ def run(stream, limit_codepoints, limit_errors, limit_graphemes, limit_graphemes
                        f" \"{rerun_software_version}\""
                        f" => \"{terminal_version}\"\n")
             if rerun_changed and not silent:
+                # When "VTE" appears in either old or new values, prefer
+                # the original (rerun) values as defaults — VTE is the
+                # underlying engine and the user typically wants to keep
+                # the terminal-specific name and version.
+                vte_involved = any(
+                    'VTE' in (val or '')
+                    for val in (rerun_software_name, terminal_software,
+                                rerun_software_version, terminal_version))
+                if vte_involved:
+                    default_software = rerun_software_name or terminal_software
+                    default_version = rerun_software_version or terminal_version
+                else:
+                    default_software = terminal_software
+                    default_version = terminal_version
                 confirm = input('Continue with new values? '
                                 '(press return to accept, or enter new values)\n'
-                                f'  Terminal Software [{terminal_software}]: ')
-                if confirm.strip():
-                    terminal_software = confirm.strip()
-                confirm = input(f'  Software Version [{terminal_version}]: ')
-                if confirm.strip():
-                    terminal_version = confirm.strip()
+                                f'  Terminal Software [{default_software}]: ')
+                terminal_software = confirm.strip() or default_software
+                confirm = input(f'  Software Version [{default_version}]: ')
+                terminal_version = confirm.strip() or default_version
 
     start_time = time.monotonic()
 
@@ -649,6 +661,17 @@ def _build_capabilities_kv_pairs(term, results):
     pairs.append(("Kitty Clipboard?",
                   _color_yes_no(term, results.get('kitty_clipboard_protocol',
                                                   False))))
+
+    # OSC 52 Clipboard: tri-state — True (enabled), "supported" (DA1 ext 52
+    # advertised but query timed out), or False (not supported).
+    osc52 = results.get('osc52_clipboard', False)
+    if osc52 is True:
+        pairs.append(("OSC 52 Clipboard?", term.green2("Yes")))
+    elif osc52 == 'supported':
+        pairs.append(("OSC 52 Clipboard?",
+                      term.yellow("Supported (DA1 ext 52)")))
+    else:
+        pairs.append(("OSC 52 Clipboard?", _color_yes_no(term, False)))
 
     pointer = results.get('kitty_pointer_shapes')
     if isinstance(pointer, dict) and pointer.get('supported'):

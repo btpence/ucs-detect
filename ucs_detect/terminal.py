@@ -99,6 +99,7 @@ NOTABLE_DEC_MODES = [
     _DPM.FOCUS_IN_OUT_EVENTS,
     _DPM.MOUSE_EXTENDED_SGR,
     _DPM.BRACKETED_PASTE_MIME,
+    _DPM.COLOR_PALETTE_UPDATES,
 ]
 
 
@@ -237,7 +238,10 @@ def maybe_determine_software(term, writer, timeout=1.0):
             if sv.version:
                 result['software_version'] = sv.version
     else:
-        # Try ENQ (answerback) as fallback.
+        # Try ENQ (answerback) as fallback — skip on Windows where
+        # flushinp() may hang on non-console handles (e.g. mintty PTY).
+        if sys.platform == 'win32':
+            return result
         if term.stream:
             term.stream.write('\x05')
             term.stream.flush()
@@ -411,6 +415,243 @@ def maybe_determine_kitty_pointer_shapes(term, timeout=1.0, **_kw):
     return {'kitty_pointer_shapes': False}
 
 
+def maybe_determine_styled_underlines(term, timeout=1.0, **_kw):
+    """Detect styled/colored underline support via XTGETTCAP, delegating to blessed."""
+    return {
+        'styled_underlines': term.does_styled_underlines(timeout=timeout),
+        'colored_underlines': term.does_colored_underlines(timeout=timeout),
+    }
+
+
+def maybe_determine_osc52_clipboard(term, timeout=60.0, **_kw):
+    """Detect OSC 52 clipboard support, delegating to blessed.
+
+    Only called when DA1 extension 52 is present, indicating the terminal
+    advertises OSC 52 clipboard write support per the vt-extensions spec:
+    https://github.com/contour-terminal/vt-extensions/blob/master/clipboard-extension.md
+
+    Returns a tri-state value:
+
+    - ``True``: clipboard access is enabled (terminal responded)
+    - ``"supported"``: DA1 advertises extension 52 but the OSC 52 query
+      timed out (user may not have approved the permission prompt yet)
+    - ``False``: not supported (caller should not reach here)
+    """
+    if term.does_osc52_clipboard(timeout=timeout):
+        return {'osc52_clipboard': True}
+    return {'osc52_clipboard': 'supported'}
+
+
+def maybe_determine_color_scheme(term, timeout=1.0, **_kw):
+    """Query dark/light mode preference via CSI ? 996 n, delegating to blessed."""
+    scheme = term.get_color_scheme(timeout=timeout)
+    if scheme is not None:
+        return {'color_scheme': scheme}
+    return {'color_scheme': False}
+
+
+def maybe_determine_kitty_query(term, timeout=1.0, **_kw):
+    """Detect Kitty XTGETTCAP query extensions, delegating to blessed."""
+    return {'kitty_query': term.does_kitty_query(timeout=timeout)}
+
+
+def maybe_determine_decrqss(term, timeout=1.0, **_kw):
+    """Detect DECRQSS (Request Status String) support, delegating to blessed."""
+    return {'decrqss': term.does_decrqss(timeout=timeout)}
+
+
+_RE_DECRQSS_RESPONSE = re.compile(r'\x1bP([01])\$r([^\x1b]*)\x1b\\')
+
+
+def maybe_determine_cursor_style_query(term, timeout=1.0, **_kw):
+    """Detect DECRQSS DECSCUSR (cursor style query) support.
+
+    Sends ``DCS $ q SP q ST`` with a CPR boundary fence.  A valid
+    response (``DCS 1 $ r ... q ST``) means the terminal supports
+    querying cursor style.  Most terminals do not respond to this
+    sub-query even when they support DECRQSS for SGR.
+    """
+    if not term.is_a_tty or not term._does_styling:
+        return {'decscusr_query': False}
+
+    match = term._query_with_boundary(
+        '\x1bP$q q\x1b\\', _RE_DECRQSS_RESPONSE, timeout)
+
+    supported = match is not None and match.group(1) == '1'
+    return {'decscusr_query': supported}
+
+
+# DECRQCRA -- https://vt100.net/docs/vt510-rm/DECRQCRA.html
+# Full screen-scrape tool: blessed/bin/screen-scrape.py
+_DECRQCRA = "\x1b[{pid};1;{r};{c};{r};{c}*y"
+_DECCKSR_RE = re.compile(r"\x1bP(\d+)!~([0-9A-Fa-f]{4})\x1b\\")
+_CPR_RE = re.compile(r"\x1b\[(\d+);(\d+)R")
+
+
+def maybe_determine_decrqcra(term, timeout=1.0, **_kw):
+    """Probe DECRQCRA (checksum rectangular area) support.
+
+    First discovers the current cursor row via CPR, then writes 'A' at
+    column 1 of that row and sprays two DECRQCRA queries — one for
+    the populated cell (col 1) and one for an adjacent blank cell
+    (col 2) — with a second CPR boundary fence.  If both checksums
+    arrive and differ, the terminal supports screen-scraping via
+    DECRQCRA.
+
+    Uses ``move_x(0)`` on the current row to avoid addressing the
+    bottom-right corner, which would cause auto-margin scrolling.
+    See ``blessed/bin/screen-scrape.py`` for the full screen-scrape tool.
+
+    :returns: dict with ``decrqcra`` key: True or False
+    """
+    if not term.is_a_tty or not term._does_styling:
+        return {'decrqcra': False}
+
+    from blessed.keyboard import _read_until
+
+    ctx = None
+    try:
+        if term._line_buffered:
+            ctx = term.cbreak()
+            ctx.__enter__()
+
+        # step 1: discover current row via CPR
+        term.stream.write("\x1b[6n")
+        term.stream.flush()
+        cpr_match, data = _read_until(term=term,
+                                      pattern=_CPR_RE.pattern,
+                                      timeout=timeout)
+        if not cpr_match:
+            term.ungetch(data)
+            return {'decrqcra': False}
+
+        row = int(cpr_match.group(1))
+        # re-buffer any non-CPR data
+        data = data[:cpr_match.start()] + data[cpr_match.end():]
+        term.ungetch(data)
+
+        # step 2: move to col 1 of current row, write 'A', spray two
+        # DECRQCRA queries (populated cell pid=1, blank cell pid=2),
+        # erase line, CPR fence
+        query = (
+            f"\x1b[{row};1HA"
+            + _DECRQCRA.format(pid=1, r=row, c=1)
+            + _DECRQCRA.format(pid=2, r=row, c=2)
+            + f"\x1b[{row};1H\x1b[2K"
+            + "\x1b[6n"
+        )
+        term.stream.write(query)
+        term.stream.flush()
+
+        # wait for CPR boundary
+        match, data = _read_until(term=term,
+                                  pattern=_CPR_RE.pattern,
+                                  timeout=timeout)
+        if match:
+            data = data[:match.start()] + data[match.end():]
+
+        # collect DECCKSR responses keyed by pid
+        checksums = {}
+        for m in _DECCKSR_RE.finditer(data):
+            checksums[int(m.group(1))] = int(m.group(2), 16)
+        data = _DECCKSR_RE.sub('', data)
+        term.ungetch(data)
+
+    finally:
+        if ctx is not None:
+            ctx.__exit__(None, None, None)
+
+    cksum_a = checksums.get(1)
+    cksum_b = checksums.get(2)
+    supported = (cksum_a is not None and cksum_b is not None
+                 and cksum_a != cksum_b)
+    return {'decrqcra': supported}
+
+
+# -- CVE probes ported from https://github.com/dgl/vt-houdini --
+#
+# Each test sends a sequence containing a unique marker and checks whether
+# the terminal echoes the marker back, indicating a vulnerability.
+
+_CVE_PROBES = [
+    # Title echo-back: set title with marker, then query title
+    ('CVE-2003-0063',
+     '\x1b]0;cve20030063\a\x1b[21t',
+     'cve20030063'),
+    # DECRQSS echo-back (rxvt-unicode / xterm variants)
+    ('CVE-2008-2383',
+     '\x1bP$q;cve20082383\x1b\\',
+     'cve20082383'),
+    # Xterm.js XTGETTCAP injection
+    ('CVE-2019-0542',
+     '\x1bP+qfoo;\ncve20190542;aa\n\x1b\\',
+     'cve20190542'),
+    # rxvt-unicode graphics mode leak
+    ('CVE-2021-33477',
+     '\x1bG',
+     '\n'),
+    # xterm font OSC 50 echo-back
+    ('CVE-2022-45063',
+     '\x1b]50;cve202245063\a\x1b]50;?\a',
+     'cve202245063'),
+    # ConEmu title with embedded CR
+    ('CVE-2022-46387',
+     '\x1b]0;\rcve202246387\r\a\x1b[21t',
+     'cve202246387'),
+    # iTerm2 DECRQSS variant with newline
+    ('CVE-2022-45872',
+     '\x1bP$q;cve202245872\n\x1b\\\n\x1bP$qm\x1b\\',
+     'cve202245872'),
+]
+
+
+def maybe_determine_cve_probes(term, timeout=1.0, **_kw):
+    """Probe for known terminal escape sequence vulnerabilities.
+
+    Ported from vt-houdini.  Each test sends a crafted sequence
+    containing a unique marker and checks whether the terminal echoes
+    the marker back in its response, indicating a vulnerability.
+
+    :returns: dict with ``cve_results`` mapping CVE id to bool
+    """
+    if not term.is_a_tty or not term._does_styling:
+        return {'cve_results': {}}
+
+    from blessed.keyboard import _read_until
+
+    results = {}
+    ctx = None
+    try:
+        if term._line_buffered:
+            ctx = term.cbreak()
+            ctx.__enter__()
+
+        for cve_id, sequence, marker in _CVE_PROBES:
+            # send attack sequence + CPR boundary fence
+            term.stream.write(sequence + '\x1b[6n')
+            term.stream.flush()
+
+            # wait for CPR boundary
+            match, data = _read_until(term=term,
+                                      pattern=_CPR_RE.pattern,
+                                      timeout=timeout)
+            if match:
+                data = data[:match.start()] + data[match.end():]
+
+            vulnerable = marker in data
+            if vulnerable:
+                results[cve_id] = data.replace('\x1b', '\\e')
+            else:
+                results[cve_id] = False
+            term.ungetch(data)
+
+    finally:
+        if ctx is not None:
+            ctx.__exit__(None, None, None)
+
+    return {'cve_results': results}
+
+
 def _timed_detect(func, *args, cps_tracker=None, **kwargs):
     """
     Call a detection function, updating cps_tracker on success.
@@ -420,7 +661,7 @@ def _timed_detect(func, *args, cps_tracker=None, **kwargs):
     """
     if cps_tracker is None:
         return func(*args, **kwargs)
-    with cps_tracker.timing() as done_ok:
+    with cps_tracker.timing(category="capability") as done_ok:
         result = func(*args, **kwargs)
         if result:
             n_items = sum(1 for v in result.values()
@@ -477,6 +718,18 @@ def do_terminal_detection(all_modes=False, cursor_report_delay_ms=0,
     if not is_modern:
         return attrs
 
+    # OSC 52 Clipboard: only query when DA1 advertises extension 52.
+    # Tested early so the user sees any clipboard permission prompt while
+    # other detection proceeds, but with a long timeout (60s) so that a
+    # late response does not leak into subsequent queries.
+    # Spec: https://github.com/contour-terminal/vt-extensions/blob/master/clipboard-extension.md
+    da_ext = attrs.get('device_attributes') or {}
+    da_supports_osc52 = 52 in (da_ext.get('extensions') or [])
+    if da_supports_osc52:
+        with _status(writer, term, "OSC 52 Clipboard", bg_rgb, silent=silent):
+            attrs.update(td(maybe_determine_osc52_clipboard, term,
+                            timeout=60.0))
+
     attrs.update(maybe_determine_dec_modes(
         term, writer, all_modes=all_modes, bg_rgb=bg_rgb,
         timeout=timeout, cps_tracker=cps_tracker, silent=silent))
@@ -509,6 +762,30 @@ def do_terminal_detection(all_modes=False, cursor_report_delay_ms=0,
     with _status(writer, term, "Kitty Pointer Shapes", bg_rgb, silent=silent):
         attrs.update(td(maybe_determine_kitty_pointer_shapes, term,
                         timeout=timeout))
+    with _status(writer, term, "Styled Underlines", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_styled_underlines, term,
+                        timeout=timeout))
+    with _status(writer, term, "Color Scheme", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_color_scheme, term,
+                        timeout=timeout))
+    with _status(writer, term, "Kitty Query", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_kitty_query, term,
+                        timeout=timeout))
+    with _status(writer, term, "DECRQSS", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_decrqss, term,
+                        timeout=timeout))
+    if attrs.get('decrqss'):
+        with _status(writer, term, "DECSCUSR Query", bg_rgb,
+                     silent=silent):
+            attrs.update(td(maybe_determine_cursor_style_query, term,
+                            timeout=timeout))
+    with _status(writer, term, "DECRQCRA", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_decrqcra, term,
+                        timeout=timeout))
+    with _status(writer, term, "CVE Probes", bg_rgb, silent=silent):
+        attrs.update(td(maybe_determine_cve_probes, term,
+                        timeout=timeout))
+
     return attrs
 
 

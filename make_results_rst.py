@@ -336,6 +336,103 @@ def _create_multi_metric_plot(terminal_name, scores_dict, all_scores_dict,
     plt.close()
 
 
+def create_time_summary_plot(score_table):
+    """
+    Create a scatterplot showing the correlation between final Score and CPR
+    round-trip time (rtt_avg_ms).
+
+    :returns: filename of the generated plot
+    """
+    os.makedirs(PLOTS_PATH, exist_ok=True)
+
+    names = []
+    scores = []
+    timing_data = []  # [rtt_avg, rtt_mdev] per terminal
+
+    for entry in score_table:
+        if math.isnan(entry["score_final_scaled"]):
+            continue
+        cps = entry["data"].get("cps_summary") or {}
+        # Prefer per-category "cpr" stats (excludes capability detection
+        # timeouts), fall back to top-level summary for older data files
+        cpr_stats = cps.get("cpr") or cps
+        rtt_avg = cpr_stats.get("rtt_avg_ms")
+        rtt_mdev = cpr_stats.get("rtt_mdev_ms", 0)
+        rtt_min = cpr_stats.get("rtt_min_ms", rtt_avg)
+        rtt_max = cpr_stats.get("rtt_max_ms", rtt_avg)
+        if rtt_avg is None:
+            continue
+        names.append(entry["terminal_software_name"])
+        scores.append(entry["score_final_scaled"] * 100)
+        timing_data.append((rtt_avg, rtt_mdev, rtt_min, rtt_max))
+
+    if not names:
+        return None
+
+    scores_arr = np.array(scores)
+
+    # Sort ascending by score (lowest score leftmost)
+    order = np.argsort(scores_arr)
+    scores_arr = scores_arr[order]
+    names = [names[i] for i in order]
+    timing_data = [timing_data[i] for i in order]
+
+    rtt_avg_arr = np.array([d[0] for d in timing_data])
+    rtt_mdev_arr = np.array([d[1] for d in timing_data])
+    rtt_min_arr = np.array([d[2] for d in timing_data])
+    rtt_max_arr = np.array([d[3] for d in timing_data])
+
+    fig, ax = plt.subplots(figsize=(12, max(7, len(names) * 0.3)))
+
+    positions = np.arange(len(names))
+    colors = [_percentile_to_color(s) for s in scores_arr]
+
+    # Horizontal bars at the average, with T-capped whiskers at +/- 1 std dev
+    xerr_lower = np.minimum(rtt_mdev_arr, rtt_avg_arr)  # clamp so bar doesn't go negative
+    xerr_upper = rtt_mdev_arr
+    ax.barh(positions, rtt_avg_arr, height=0.5, color=colors,
+            edgecolor='black', linewidth=0.5, alpha=0.7, zorder=1)
+    ax.errorbar(rtt_avg_arr, positions, xerr=[xerr_lower, xerr_upper],
+                fmt='s', markersize=4, color='black',
+                ecolor='black', elinewidth=1.5, capsize=4,
+                capthick=1.5, zorder=2, label='Avg RTT (\u00b11 std dev)')
+
+    ax.set_xscale('log')
+    ax.set_yticks(positions)
+    ax.set_yticklabels([
+        f"{name} ({scores_arr[i]:.0f} to {_fmt_ms(rtt_avg_arr[i])})"
+        for i, name in enumerate(names)
+    ], fontsize=8)
+    ax.set_xlabel('CPR Round-Trip Time', fontsize=12)
+    ax.set_title('Final Scaled Score to Cursor Position Report Response Time',
+                 fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3, which='both', axis='x')
+    ax.legend(fontsize=9, loc='lower right')
+
+    # Human-readable x-axis tick labels
+    from matplotlib.ticker import FuncFormatter
+    def _ms_formatter(x, _pos):
+        if x >= 1000:
+            return f"{x / 1000:.0f}s"
+        if x >= 100:
+            return f"{x:.0f}ms"
+        if x >= 10:
+            return f"{x:.0f}ms"
+        if x >= 1:
+            return f"{x:.1f}ms"
+        return f"{x:.2f}ms"
+    ax.xaxis.set_major_formatter(FuncFormatter(_ms_formatter))
+
+    plt.tight_layout()
+    plot_filename = "time_summary_scatter.png"
+    plt.savefig(os.path.join(PLOTS_PATH, plot_filename), dpi=100,
+                bbox_inches='tight', metadata={'CreationDate': None})
+    plt.close()
+    return plot_filename
+
+
+
+
 def main():
     print(f'Generating score table... ', file=sys.stderr, end='', flush=True)
     score_table, all_successful_languages = make_score_table()
@@ -351,12 +448,17 @@ def main():
         fout.write(generate_score_css())
     print('ok', file=sys.stderr)
 
+    print(f'Generating TIME summary plot... ', file=sys.stderr, end='', flush=True)
+    time_plot = create_time_summary_plot(score_table)
+    print('ok', file=sys.stderr)
+
     print(f'Writing docs/results.rst ... ', file=sys.stderr, end='', flush=True)
     with open('docs/results.rst', 'w') as fout, contextlib.redirect_stdout(fout):
         display_tabulated_scores(score_table)
         # Definitions removed - not shown in individual terminal pages
         display_common_languages(all_successful_languages)
         display_capabilities_table(score_table)
+        # display_time_summary removed: plot is still generated but not published
         display_results_toc(score_table)
         display_common_hyperlinks()
     print('ok', file=sys.stderr)
@@ -378,15 +480,53 @@ def main():
             show_emoji_zwj_results(sw_name, entry)
             show_vs_results(sw_name, entry, '16')
             show_vs_results(sw_name, entry, '15')
+            show_sri_results(sw_name, entry)
+            show_sfz_results(sw_name, entry)
+            show_ri_results(sw_name, entry)
             show_graphics_results(sw_name, entry)
             show_language_results(sw_name, entry)
             show_dec_modes_results(sw_name, entry)
             show_kitty_keyboard_results(sw_name, entry)
             show_xtgettcap_results(sw_name, entry)
+            show_text_sizing_results(sw_name, entry)
             show_reproduce_command(sw_name, entry)
             show_time_elapsed_results(sw_name, entry)
             display_common_hyperlinks()
         print('ok', file=sys.stderr)
+
+
+def _fmt_ms(ms):
+    """Format milliseconds with adaptive precision."""
+    if ms >= 1000:
+        return f"{ms / 1000:.1f}s"
+    if ms >= 100:
+        return f"{ms:.0f}ms"
+    if ms >= 10:
+        return f"{ms:.1f}ms"
+    return f"{ms:.2f}ms"
+
+
+def _escape_terminfo_value(value):
+    """Escape non-printable control characters for display in RST tables."""
+    result = []
+    for ch in value:
+        if ch == '\x1b':
+            result.append('\\E')
+        elif ch == '\x07':
+            result.append('\\a')
+        elif ch == '\x08':
+            result.append('\\b')
+        elif ch == '\n':
+            result.append('\\n')
+        elif ch == '\r':
+            result.append('\\r')
+        elif ch == '\t':
+            result.append('\\t')
+        elif ord(ch) < 0x20:
+            result.append(f'\\x{ord(ch):02x}')
+        else:
+            result.append(ch)
+    return ''.join(result)
 
 
 def make_unicode_codepoint(wchar):
@@ -575,7 +715,10 @@ def make_score_table():
         # Calculate final score using weighted average
         # Time is weighted at 0.5 (half as powerful as other metrics)
         # Graphics (GFX) scores: 1.0 modern (iTerm2/Kitty), 0.5 legacy (Sixel/ReGIS), 0.0 none
+        # SRI/SFZ are standalone (non-sequence) tests, weighted 1/3 as they
+        # cover uncommon edge cases
         TIME_WEIGHT = 0.5
+        STANDALONE_WEIGHT = 1.0 / 3.0
         scores_with_weights = [
             (entry["score_language"], 1.0),
             (entry["score_emoji_vs16"], 1.0),
@@ -583,8 +726,8 @@ def make_score_table():
             # see https://github.com/jquast/wcwidth/issues/211
             (entry["score_zwj"], 1.0),
             (entry["score_wide"], 1.0),
-            (entry["score_sri"], 1.0),
-            (entry["score_sfz"], 1.0),
+            (entry["score_sri"], STANDALONE_WEIGHT),
+            (entry["score_sfz"], STANDALONE_WEIGHT),
             (entry["score_ri"], 1.0),
             (entry["score_capabilities"], 1.0),
             (entry["score_graphics"], 1.0),
@@ -1069,7 +1212,7 @@ def score_capabilities(data):
                      _DPM.FOCUS_IN_OUT_EVENTS, _DPM.MOUSE_EXTENDED_SGR,
                      _DPM.GRAPHEME_CLUSTERING, _DPM.BRACKETED_PASTE_MIME):
         mode_key = str(mode_num) if str(mode_num) in modes else mode_num
-        if mode_key in modes and modes[mode_key].get("supported", False):
+        if mode_key in modes and _mode_is_usable(modes[mode_key]):
             count += 1
 
     if tr.get("kitty_keyboard") is not None:
@@ -1180,11 +1323,27 @@ def _capability_yes_no(value, terminal_name, section_suffix):
         status, score, terminal_name, section_suffix)
 
 
+def _mode_is_usable(mode_data):
+    """Check if a DEC mode is usable (changeable or permanently enabled).
+
+    DECRPM value 4 (permanently reset) means the terminal acknowledges the
+    mode but it cannot be enabled — treat as unsupported.  Values 1 (set),
+    2 (reset), and 3 (permanently set) are usable.  Checks the raw ``value``
+    field for correctness with older data files, falling back to the
+    ``supported`` and ``changeable`` fields.
+    """
+    value = mode_data.get('value')
+    if value is not None:
+        return value in {1, 2, 3}
+    return (mode_data.get('changeable', False)
+            or mode_data.get('enabled', False))
+
+
 def _get_dec_mode_supported(modes, mode_num):
-    """Check if a DEC mode is supported, handling both int and str keys."""
+    """Check if a DEC mode is usable, handling both int and str keys."""
     mode_key = str(mode_num) if str(mode_num) in modes else mode_num
     if mode_key in modes:
-        return modes[mode_key].get('supported', False)
+        return _mode_is_usable(modes[mode_key])
     return False
 
 
@@ -1253,7 +1412,7 @@ def display_capabilities_table(score_table):
         row["Text Size"] = _capability_yes_no(
             (text_sizing.get('width') or text_sizing.get('scale'))
             if tested else None,
-            sw_name, suffix)
+            sw_name, "_text_sizing")
 
         # Kitty Clipboard Protocol
         row["Kitty Clip"] = _capability_yes_no(
@@ -1335,19 +1494,22 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
             "#": 6,
             "Score Type": make_outbound_hyperlink("SRI", sw_name + "_sri"),
             "Raw Score": format_raw_score(entry["score_sri"]),
-            "Final Scaled Score": format_score_pct(entry["score_sri_scaled"]),
+            "Final Scaled Score": (format_score_pct(entry["score_sri_scaled"])
+                                   if not math.isnan(entry["score_sri"]) else "*(excluded)*"),
         },
         {
             "#": 7,
             "Score Type": make_outbound_hyperlink("SFZ", sw_name + "_sfz"),
             "Raw Score": format_raw_score(entry["score_sfz"]),
-            "Final Scaled Score": format_score_pct(entry["score_sfz_scaled"]),
+            "Final Scaled Score": (format_score_pct(entry["score_sfz_scaled"])
+                                   if not math.isnan(entry["score_sfz"]) else "*(excluded)*"),
         },
         {
             "#": 8,
             "Score Type": make_outbound_hyperlink("RI", sw_name + "_ri"),
             "Raw Score": format_raw_score(entry["score_ri"]),
-            "Final Scaled Score": format_score_pct(entry["score_ri_scaled"]),
+            "Final Scaled Score": (format_score_pct(entry["score_ri_scaled"])
+                                   if not math.isnan(entry["score_ri"]) else "*(excluded)*"),
         },
         {
             "#": 9,
@@ -2023,7 +2185,7 @@ def show_xtgettcap_results(sw_name, entry):
 
     tabulated_caps = []
     for idx, (key, value) in enumerate(sorted(capabilities.items()), start=1):
-        display_value = str(value)
+        display_value = _escape_terminfo_value(str(value))
         if len(display_value) > 60:
             display_value = display_value[:57] + "..."
         tabulated_caps.append({
@@ -2040,6 +2202,120 @@ def show_xtgettcap_results(sw_name, entry):
     print("terminfo capabilities directly from the terminal emulator, rather than relying")
     print("on the system terminfo database.")
     print()
+
+
+def show_text_sizing_results(sw_name, entry):
+    """Display Text Sizing protocol (OSC 66) detection results."""
+    display_inbound_hyperlink(entry["terminal_software_name"] + "_text_sizing")
+    display_title("Text Sizing Protocol (OSC 66)", 3)
+
+    tr = entry["data"].get("terminal_results") or {}
+    text_sizing = tr.get("text_sizing", {})
+    has_width = text_sizing.get("width", False)
+    has_scale = text_sizing.get("scale", False)
+
+    if not has_width and not has_scale:
+        print(f"*{sw_name}* does not support the `Text Sizing protocol`_.")
+        print()
+        print('.. _`Text Sizing protocol`: '
+              'https://sw.kovidgoyal.net/kitty/text-sizing-protocol/')
+        print()
+        return
+
+    features = []
+    if has_width:
+        features.append("explicit width (``w``)")
+    if has_scale:
+        features.append("scale (``s``)")
+    print(f"*{sw_name}* supports the `Text Sizing protocol`_: "
+          f"{', '.join(features)}.")
+    print()
+    print("The Text Sizing protocol (OSC 66) allows terminal programs to display text")
+    print("at different sizes and to explicitly specify the cell width of characters.")
+    print("Detection is performed by measuring cursor movement after sending")
+    print("``ESC ] 66 ; w=2 ; <space> BEL`` and ``ESC ] 66 ; s=2 ; <space> BEL``.")
+    print()
+    print('.. _`Text Sizing protocol`: '
+          'https://sw.kovidgoyal.net/kitty/text-sizing-protocol/')
+    print()
+
+
+def show_sri_results(sw_name, entry):
+    """Display standalone Regional Indicator results."""
+    display_inbound_hyperlink(entry["terminal_software_name"] + "_sri")
+    display_title("Standalone Regional Indicator support", 3)
+    sri_results = entry["data"]["test_results"].get("sri_results") or {}
+    if not sri_results:
+        print(f"Standalone Regional Indicator results for *{sw_name}* are not available.")
+        print()
+        return
+    result = next(iter(sri_results.values()))
+    n_errors = result["n_errors"]
+    n_total = result["n_total"]
+    pct = ((n_total - n_errors) / n_total * 100) if n_total else 0
+    print(
+        f"Standalone Regional Indicator support of *{sw_name}* "
+        f"is **{pct:0.1f}%** ({n_errors} errors "
+        f"of {n_total} codepoints tested)."
+    )
+    print()
+    if n_errors > 0 and result.get("failed_codepoints"):
+        fail_record = find_best_failure(result["failed_codepoints"])
+        show_record_failure(
+            sw_name, "of a standalone Regional Indicator,", fail_record
+        )
+
+
+def show_sfz_results(sw_name, entry):
+    """Display standalone Fitzpatrick skin tone modifier results."""
+    display_inbound_hyperlink(entry["terminal_software_name"] + "_sfz")
+    display_title("Standalone Fitzpatrick modifier support", 3)
+    sfz_results = entry["data"]["test_results"].get("sfz_results") or {}
+    if not sfz_results:
+        print(f"Standalone Fitzpatrick modifier results for *{sw_name}* are not available.")
+        print()
+        return
+    result = next(iter(sfz_results.values()))
+    n_errors = result["n_errors"]
+    n_total = result["n_total"]
+    pct = ((n_total - n_errors) / n_total * 100) if n_total else 0
+    print(
+        f"Standalone Fitzpatrick skin tone modifier support of *{sw_name}* "
+        f"is **{pct:0.1f}%** ({n_errors} errors "
+        f"of {n_total} codepoints tested)."
+    )
+    print()
+    if n_errors > 0 and result.get("failed_codepoints"):
+        fail_record = find_best_failure(result["failed_codepoints"])
+        show_record_failure(
+            sw_name, "of a standalone Fitzpatrick modifier,", fail_record
+        )
+
+
+def show_ri_results(sw_name, entry):
+    """Display Regional Indicator flag sequence results."""
+    display_inbound_hyperlink(entry["terminal_software_name"] + "_ri")
+    display_title("Regional Indicator flag sequence support", 3)
+    ri_results = entry["data"]["test_results"].get("ri_results") or {}
+    if not ri_results:
+        print(f"Regional Indicator flag sequence results for *{sw_name}* are not available.")
+        print()
+        return
+    result = next(iter(ri_results.values()))
+    n_errors = result["n_errors"]
+    n_total = result["n_total"]
+    pct = ((n_total - n_errors) / n_total * 100) if n_total else 0
+    print(
+        f"Regional Indicator flag sequence support of *{sw_name}* "
+        f"is **{pct:0.1f}%** ({n_errors} errors "
+        f"of {n_total} sequences tested)."
+    )
+    print()
+    if n_errors > 0 and result.get("failed_codepoints"):
+        fail_record = find_best_failure(result["failed_codepoints"])
+        show_record_failure(
+            sw_name, "of a Regional Indicator flag sequence,", fail_record
+        )
 
 
 def show_reproduce_command(sw_name, entry):
