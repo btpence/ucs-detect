@@ -456,29 +456,38 @@ def maybe_determine_kitty_query(term, timeout=1.0, **_kw):
 
 
 def maybe_determine_decrqss(term, timeout=1.0, **_kw):
-    """Detect DECRQSS (Request Status String) support, delegating to blessed."""
-    return {'decrqss': term.does_decrqss(timeout=timeout)}
+    """Query terminal state via DECRQSS for all common settings.
 
-
-_RE_DECRQSS_RESPONSE = re.compile(r'\x1bP([01])\$r([^\x1b]*)\x1b\\')
-
-
-def maybe_determine_cursor_style_query(term, timeout=1.0, **_kw):
-    """Detect DECRQSS DECSCUSR (cursor style query) support.
-
-    Sends ``DCS $ q SP q ST`` with a CPR boundary fence.  A valid
-    response (``DCS 1 $ r ... q ST``) means the terminal supports
-    querying cursor style.  Most terminals do not respond to this
-    sub-query even when they support DECRQSS for SGR.
+    Queries each setting in ``blessed.DECRQSS_SETTINGS`` that is
+    relevant to modern terminals and returns a dict of results.
+    The ``decrqss`` key is True when at least one setting responded.
+    Individual setting values are stored under ``decrqss_settings``.
     """
-    if not term.is_a_tty or not term._does_styling:
-        return {'decscusr_query': False}
+    S = blessed.DECRQSS_SETTINGS
+    settings = [
+        (S.SGR, 'sgr'),
+        (S.DECSCUSR, 'decscusr'),
+        (S.DECSTBM, 'decstbm'),
+        (S.DECSLRM, 'decslrm'),
+        (S.DECSCL, 'decscl'),
+        (S.DECSCA, 'decsca'),
+        (S.DECSCPP, 'decscpp'),
+        (S.DECSLPP, 'decslpp'),
+        (S.DECSNLS, 'decsnls'),
+        (S.DECSASD, 'decsasd'),
+        (S.DECSSDT, 'decssdt'),
+        (S.DECSACE, 'decsace'),
+    ]
+    results = {}
+    for setting_id, name in settings:
+        value = term.get_decrqss(setting_id, timeout=timeout)
+        if value is not None:
+            results[name] = value
 
-    match = term._query_with_boundary(
-        '\x1bP$q q\x1b\\', _RE_DECRQSS_RESPONSE, timeout)
-
-    supported = match is not None and match.group(1) == '1'
-    return {'decscusr_query': supported}
+    return {
+        'decrqss': bool(results),
+        'decrqss_settings': results or False,
+    }
 
 
 # DECRQCRA -- https://vt100.net/docs/vt510-rm/DECRQCRA.html
@@ -690,11 +699,6 @@ def do_terminal_detection(all_modes=False, cursor_report_delay_ms=0,
     with _status(writer, term, "DECRQSS", bg_rgb, silent=silent):
         attrs.update(td(maybe_determine_decrqss, term,
                         timeout=timeout))
-    if attrs.get('decrqss'):
-        with _status(writer, term, "DECSCUSR Query", bg_rgb,
-                     silent=silent):
-            attrs.update(td(maybe_determine_cursor_style_query, term,
-                            timeout=timeout))
     with _status(writer, term, "DECRQCRA", bg_rgb, silent=silent):
         attrs.update(td(maybe_determine_decrqcra, term,
                         timeout=timeout))
