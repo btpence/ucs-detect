@@ -29,8 +29,8 @@ session_arguments:
   limit_graphemes: 0
   limit_graphemes_pct: 0
   stream: stderr
-software_name: ''
-software_version: ''
+software_name: ConEmu
+software_version: 23.07.24
 system: Windows
 terminal_results:
   color_scheme: false

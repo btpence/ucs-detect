@@ -644,9 +644,12 @@ def make_score_table():
             # Graphics protocol score - 1.0 modern, 0.5 legacy, 0.0 none
             _score_graphics = score_graphics(data)
 
+            _sw_name = data.get("software_name", data.get('software'))
+            assert _sw_name, f"empty software_name in {filepath}"
+
             score_table.append(
                 dict(
-                    terminal_software_name=data.get("software_name", data.get('software')),
+                    terminal_software_name=_sw_name,
                     terminal_software_version=data.get("software_version", data.get('version')),
                     os_system=data["system"],
                     score_emoji_vs16=score_emoji_vs16,
