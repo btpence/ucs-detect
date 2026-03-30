@@ -458,12 +458,12 @@ def maybe_determine_kitty_query(term, timeout=1.0, **_kw):
 def maybe_determine_decrqss(term, timeout=1.0, **_kw):
     """Query terminal state via DECRQSS for all common settings.
 
-    Queries each setting in ``blessed.DecrqssSettings`` that is
+    Queries each setting in ``blessed.Decrqss`` that is
     relevant to modern terminals and returns a dict of results.
     The ``decrqss`` key is True when at least one setting responded.
     Individual setting values are stored under ``decrqss_settings``.
     """
-    S = blessed.DecrqssSettings
+    S = blessed.Terminal.Decrqss
     settings = [
         (S.SGR, 'sgr'),
         (S.DECSCUSR, 'decscusr'),
