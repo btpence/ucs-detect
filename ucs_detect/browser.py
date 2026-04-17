@@ -61,11 +61,11 @@ import string
 import argparse
 import functools
 import unicodedata
+import urllib3.util
 
 # 3rd party
 import blessed
 import requests
-import urllib3.util
 from wcwidth import ZERO_WIDTH, wcwidth, list_versions, _wcmatch_version
 
 # local
@@ -116,7 +116,6 @@ def get_http_session():
         connect=MAX_RETRIES,
         read=MAX_RETRIES,
         backoff_factor=BACKOFF_FACTOR,
-        backoff_jitter=BACKOFF_FACTOR,
     )
     adapter = requests.adapters.HTTPAdapter(max_retries=retries)
     session.mount('https://', adapter)
