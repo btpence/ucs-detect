@@ -226,6 +226,10 @@ marks across diverse scripts.
 History
 -------
 
+- 2.1.0 (2026-04-17): Add more testing for standalone and flags (RI), kitty text sizing
+  protocol, make ucs-browser compatible with older python versions, and some changes
+  to allow ucs-detect to integrate as a network service (see ``telnet modem.xyz``)
+
 - 2.0.2 (2026-02-28): Some timing bugfixes caused features to sometimes report "No" support,
   and provide major speed enhancement to terminal test with integration of latest blessed
   release.
