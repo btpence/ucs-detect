@@ -996,8 +996,9 @@ def display_table_definitions():
         "  DEC Modes, and TIME), then scaled (normalized 0-100%) relative to all terminals tested.\n"
         "  Note: VS15 is excluded from the final score — its interpretation is contested.\n"
         "  Higher scores indicate better overall Unicode and terminal feature support. DEC Modes and\n"
-        "  TIME are normalized to 0-1 range before averaging. TIME is weighted at 0.5 (half as\n"
-        "  powerful as other metrics) to reduce its impact on the final score."
+        "  TIME are normalized to 0-1 range before averaging. TIME and graphics is weighted at 0.5 (half as\n"
+        "  powerful as other metrics), and standalone RI and Fitzpatrick are weighted at 0.3\n"
+        "  to reduce its impact on the final score."
     )
     print(
         "- *WIDE score*: Percentage of wide character codepoints correctly\n"
@@ -1553,7 +1554,7 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
     print(f"**Final Scaled Score Calculation:**")
     print()
     print(f"- Raw Final Score: {format_raw_score(entry['score_final'])}")
-    print(f"  (weighted average: WIDE + ZWJ + LANG + VS16 + SRI + SFZ + RI + CAP + GFX + 0.5*TIME)")
+    print(f"  (weighted average: WIDE + ZWJ + LANG + VS16 + 0.33*SRI + 0.33*SFZ + RI + CAP + 0.5*GFX + 0.5*TIME)")
     print(f"  the categorized 'average' absolute support level of this terminal.")
     print()
     print(f"  .. note::")
