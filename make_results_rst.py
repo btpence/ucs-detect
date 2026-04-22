@@ -716,11 +716,12 @@ def make_score_table():
             entry["score_elapsed_norm"] = float('NaN')
 
         # Calculate final score using weighted average
-        # Time is weighted at 0.5 (half as powerful as other metrics)
+        # Time and graphics are weighted at 0.5 (half as powerful as other metrics)
         # Graphics (GFX) scores: 1.0 modern (iTerm2/Kitty), 0.5 legacy (Sixel/ReGIS), 0.0 none
         # SRI/SFZ are standalone (non-sequence) tests, weighted 1/3 as they
         # cover uncommon edge cases
         TIME_WEIGHT = 0.5
+        GRAPHICS_WEIGHT = 0.5
         STANDALONE_WEIGHT = 1.0 / 3.0
         scores_with_weights = [
             (entry["score_language"], 1.0),
@@ -733,7 +734,7 @@ def make_score_table():
             (entry["score_sfz"], STANDALONE_WEIGHT),
             (entry["score_ri"], 1.0),
             (entry["score_capabilities"], 1.0),
-            (entry["score_graphics"], 1.0),
+            (entry["score_graphics"], GRAPHICS_WEIGHT),
             (entry["score_elapsed_norm"], TIME_WEIGHT)
         ]
         valid_scores_with_weights = [(s, w) for s, w in scores_with_weights if not math.isnan(s)]
