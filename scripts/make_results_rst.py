@@ -71,6 +71,20 @@ LINK_REGEX = re.compile(r'[^a-zA-Z0-9_]')
 FOOTNOTE_TEXT_SIZING = "†"
 FOOTNOTE_SIXEL = "‡"
 FOOTNOTE_CONPTY = "§"
+
+# Width metrics that the Text Sizing protocol may credit to 100%, keyed as
+# recorded in score_table["text_sizing_credited"], with their column labels.
+_TEXT_SIZING_LABELS = {
+    "wide": "WIDE", "narrow": "NARROW", "lang": "LANG", "zwj": "ZWJ",
+    "vs16": "VS16", "vs15": "VS15", "sri": "SRI", "sfz": "SFZ", "ri": "RI",
+}
+
+
+def _text_sizing_mark(result, key):
+    """Footnote suffix for a score credited 100% by the Text Sizing protocol."""
+    if key in result.get("text_sizing_credited", ()):
+        return f" {FOOTNOTE_TEXT_SIZING}"
+    return ""
 CONPTY_DA_CAVEAT_LINES = (
     f"{FOOTNOTE_CONPTY} On Windows, MSYS2_ and Cygwin_ launch native Windows programs "
     "through "
@@ -890,21 +904,31 @@ def make_score_table():
         tr = data.get("terminal_results") or {}
         ts = tr.get("text_sizing", {})
         has_text_sizing = bool(ts.get("width") or ts.get("scale"))
-        if has_text_sizing:
-            score_language = 1.0
-            _score_wide = 1.0
-            _score_narrow = 1.0
-            _score_zwj = 1.0
-            score_emoji_vs16 = 1.0
-            # VS15 is deliberately overridden here: the Text Sizing protocol can
-            # programmatically set any character's cell width, so a supporting
-            # terminal scores 100% on all width categories. The raw measurement
-            # in the YAML remains untouched, and VS15 stays excluded from the
-            # final score because its interpretation is contested (wcwidth #211).
-            score_emoji_vs15 = 1.0
-            _score_sri = 1.0
-            _score_sfz = 1.0
-            _score_ri = 1.0
+        # Each width metric is judged on its own. A metric that measured 100%
+        # earned it and is left alone. A metric that measured below 100%, or
+        # was not measured at all (NaN compares False), is credited 100%
+        # because the Text Sizing protocol lets any application set the cell
+        # width of any character, and only those metrics get the footnote.
+        # The raw measurements in the YAML remain untouched. VS15 is credited
+        # like the others but stays excluded from the final score because its
+        # interpretation is contested (wcwidth #211).
+        text_sizing_credited = set()
+
+        def _credit(key, value):
+            if not has_text_sizing or value >= 1.0:
+                return value
+            text_sizing_credited.add(key)
+            return 1.0
+
+        score_language = _credit("lang", score_language)
+        _score_wide = _credit("wide", _score_wide)
+        _score_narrow = _credit("narrow", _score_narrow)
+        _score_zwj = _credit("zwj", _score_zwj)
+        score_emoji_vs16 = _credit("vs16", score_emoji_vs16)
+        score_emoji_vs15 = _credit("vs15", score_emoji_vs15)
+        _score_sri = _credit("sri", _score_sri)
+        _score_sfz = _credit("sfz", _score_sfz)
+        _score_ri = _credit("ri", _score_ri)
 
         score_table.append(
             dict(
@@ -927,7 +951,7 @@ def make_score_table():
                 sixel_support=_sixel_support,
                 score_features=_score_features,
                 score_graphics=_score_graphics,
-                has_text_sizing=has_text_sizing,
+                text_sizing_credited=text_sizing_credited,
                 data=data,
                 fname=os.path.basename(yaml_path),
             )
@@ -1229,48 +1253,48 @@ def display_tabulated_scores(score_table):
                 ),
                 "WIDE": wrap_score_with_hyperlink(
                     format_score_int(result["score_wide_scaled"])
-                    + (f" {FOOTNOTE_TEXT_SIZING}" if result.get("has_text_sizing") else ""),
+                    + _text_sizing_mark(result, "wide"),
                     result["score_wide_scaled"],
                     result["terminal_software_name"],
                     "_wide"
                 ),
                 "NARROW": wrap_score_with_hyperlink(
                     format_score_int(result["score_narrow_scaled"])
-                    + (f" {FOOTNOTE_TEXT_SIZING}" if result.get("has_text_sizing") else ""),
+                    + _text_sizing_mark(result, "narrow"),
                     result["score_narrow_scaled"],
                     result["terminal_software_name"],
                     "_narrow"
                 ),
                 "LANG": wrap_score_with_hyperlink(
                     format_score_int(result["score_language_scaled"])
-                    + (f" {FOOTNOTE_TEXT_SIZING}" if result.get("has_text_sizing") else ""),
+                    + _text_sizing_mark(result, "lang"),
                     result["score_language_scaled"],
                     result["terminal_software_name"],
                     "_lang"
                 ),
                 "ZWJ": wrap_score_with_hyperlink(
                     format_score_int(result["score_zwj_scaled"])
-                    + (f" {FOOTNOTE_TEXT_SIZING}" if result.get("has_text_sizing") else ""),
+                    + _text_sizing_mark(result, "zwj"),
                     result["score_zwj_scaled"],
                     result["terminal_software_name"],
                     "_zwj"
                 ),
                 "VS16": wrap_score_with_hyperlink(
                     format_score_int(result["score_emoji_vs16_scaled"])
-                    + (f" {FOOTNOTE_TEXT_SIZING}" if result.get("has_text_sizing") else ""),
+                    + _text_sizing_mark(result, "vs16"),
                     result["score_emoji_vs16_scaled"],
                     result["terminal_software_name"],
                     "_vs16"
                 ),
                 "VS15": _wrap_id_contested(
                     format_score_int(result["score_emoji_vs15_scaled"])
-                    + (f" {FOOTNOTE_TEXT_SIZING}" if result.get("has_text_sizing") else ""),
+                    + _text_sizing_mark(result, "vs15"),
                     result["terminal_software_name"],
                     "_vs15"
                 ),
                 "SRI": (wrap_score_with_hyperlink(
                     format_score_int(result["score_sri_scaled"])
-                    + (f" {FOOTNOTE_TEXT_SIZING}" if result.get("has_text_sizing") else ""),
+                    + _text_sizing_mark(result, "sri"),
                     result["score_sri_scaled"],
                     result["terminal_software_name"],
                     "_sri"
@@ -1278,7 +1302,7 @@ def display_tabulated_scores(score_table):
                     else _wrap_untested(result["terminal_software_name"], "_sri")),
                 "SFZ": (wrap_score_with_hyperlink(
                     format_score_int(result["score_sfz_scaled"])
-                    + (f" {FOOTNOTE_TEXT_SIZING}" if result.get("has_text_sizing") else ""),
+                    + _text_sizing_mark(result, "sfz"),
                     result["score_sfz_scaled"],
                     result["terminal_software_name"],
                     "_sfz"
@@ -1286,7 +1310,7 @@ def display_tabulated_scores(score_table):
                     else _wrap_untested(result["terminal_software_name"], "_sfz")),
                 "RI": (wrap_score_with_hyperlink(
                     format_score_int(result["score_ri_scaled"])
-                    + (f" {FOOTNOTE_TEXT_SIZING}" if result.get("has_text_sizing") else ""),
+                    + _text_sizing_mark(result, "ri"),
                     result["score_ri_scaled"],
                     result["terminal_software_name"],
                     "_ri"
@@ -1310,15 +1334,16 @@ def display_tabulated_scores(score_table):
     table_str = tabulate.tabulate(tabulated_scores, headers="keys", tablefmt="rst")
     print_datatable(table_str)
 
-    has_any_text_sizing = any(e.get("has_text_sizing") for e in score_table)
+    has_any_text_sizing = any(e.get("text_sizing_credited") for e in score_table)
     if has_any_text_sizing:
         print()
         print(f"{FOOTNOTE_TEXT_SIZING} This terminal supports the "
               "`Kitty Text Sizing protocol`_,")
         print("which allows any application to programmatically set character widths,")
         print("remediating width issues for complex languages, emoji, and other")
-        print("problematic codepoints. It is scored 100% on WIDE, NARROW, LANG, ZWJ, VS16,")
-        print("VS15, SRI, SFZ, and RI. Interpretation of VS15 is `contested")
+        print("problematic codepoints. A score marked with this symbol measured below")
+        print("100% and is credited 100% for that reason; unmarked scores were measured")
+        print("directly. Interpretation of VS15 is `contested")
         print("<https://github.com/jquast/wcwidth/issues/211>`_ and excluded from")
         print("the final score.")
         print()
@@ -2810,7 +2835,7 @@ def show_score_breakdown(sw_name, entry, plot_filename_scaled):
         print(f"- Formula: {pct_success:.1f} / 100")
         print(f"- Result: {entry['score_emoji_vs15']*100:.2f}%"
               + (f" {FOOTNOTE_TEXT_SIZING} (Text Sizing protocol)"
-                 if entry.get("has_text_sizing") else ""))  # noqa: E226
+                 if "vs15" in entry.get("text_sizing_credited", ()) else ""))  # noqa: E226
     else:
         print("VS15 results not available.")
     print()
@@ -3618,8 +3643,16 @@ def show_text_sizing_results(sw_name, entry):
     print("This means that width errors for complex languages, emoji, variation")
     print("selectors (VS15, VS16), standalone regional indicators and Fitzpatrick")
     print("modifiers, and other problematic codepoints can be fully remediated")
-    print("at the application level. For this reason, *{}* scores **100%** on the WIDE,".format(sw_name))
-    print("LANG, ZWJ, VS16, VS15, SRI, SFZ, and RI width tests.")
+    credited = [_TEXT_SIZING_LABELS[k] for k in _TEXT_SIZING_LABELS
+                if k in entry.get("text_sizing_credited", ())]
+    if credited:
+        print(f"at the application level. For this reason, *{sw_name}* is credited")
+        print("**100%** on the {} width test{}, where it measured below 100%.".format(
+            ", ".join(credited), "s" if len(credited) > 1 else ""))
+        print("Every other width score was measured directly.")
+    else:
+        print(f"at the application level. *{sw_name}* also measured **100%** on every")
+        print("width test directly, so no score is credited to the protocol.")
     print()
     print('.. _`Text Sizing protocol`: '
           'https://sw.kovidgoyal.net/kitty/text-sizing-protocol/')
